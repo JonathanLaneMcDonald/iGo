@@ -241,14 +241,14 @@ public class iGo
 	}
 
 	public void displayBoard()	{
-		display(board, -1);
+		display(board, new HashSet<>(Collections.singletonList(-1)));
 	}
 
 	public void displayBoard(int position)	{
-		display(board, position);
+		display(board, new HashSet<>(Collections.singletonList(position)));
 	}
 
-	public void display(int[] array, int highlightPosition)
+	public void display(int[] array, Set<Integer> highlightPositions)
 	{
 		for(int r = 0; r < side; r++)
 		{
@@ -256,15 +256,15 @@ public class iGo
 			{
 				var position = side*r+c;
 
-				if(position == highlightPosition)		System.out.print("(");
-				else									System.out.print(" ");
+				if(highlightPositions.contains(position))	System.out.print("(");
+				else										System.out.print(" ");
 
-				if(array[side*r+c] == 1)				System.out.print("X");
-				if(array[side*r+c] == -1)				System.out.print("O");
-				if(array[side*r+c] == 0)				System.out.print("-");
+				if(array[side*r+c] == 1)					System.out.print("X");
+				if(array[side*r+c] == -1)					System.out.print("O");
+				if(array[side*r+c] == 0)					System.out.print("-");
 
-				if(position == highlightPosition)		System.out.print(")");
-				else									System.out.print(" ");
+				if(highlightPositions.contains(position))	System.out.print(")");
+				else										System.out.print(" ");
 			}
 			System.out.print("\n");
 		}
@@ -297,7 +297,24 @@ public class iGo
 
 	public int auditLegalMoves()
 	{
-		return 0;
+		var discrepancies = new HashSet<Integer>();
+
+		var baselineLegalForBlack = legalMovesForPlayerBaseline(1);
+		discrepancies.addAll(compareLegalMovesLists(legalMovesBlack, baselineLegalForBlack));
+
+		var baselineLegalForWhite = legalMovesForPlayerBaseline(-1);
+		discrepancies.addAll(compareLegalMovesLists(legalMovesWhite, baselineLegalForWhite));
+
+		if(!discrepancies.isEmpty())
+		{
+			System.out.println("Board State");
+			display(board, discrepancies);
+			System.out.println("Legal Moves");
+			display(baselineLegalForBlack, baselineLegalForWhite, discrepancies);
+			System.out.println("************************************************************");
+		}
+
+		return discrepancies.size();
 	}
 
 	private Set<Integer> compareLegalMovesLists(int[] a, int[] b)
@@ -327,8 +344,4 @@ public class iGo
 
 		return legalMoves;
 	}
-
-
-
-
 }

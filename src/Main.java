@@ -96,6 +96,8 @@ afterward:
 					gameContainsErrors = true;
 				}
 				player = -player;
+
+				game.auditLegalMoves();
 			}
 
 			if(gameContainsErrors)
@@ -104,7 +106,7 @@ afterward:
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 100 == 0)
+			if(gamesPlayed % 10000 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;
