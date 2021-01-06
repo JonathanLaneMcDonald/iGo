@@ -49,17 +49,18 @@ afterward:
 
 	public static void main(String[] args)
 	{
-		/*
-		var test = new iGo(5);
-		test.placeStone(new Move(0,0,5).index, 1);
+
+		/*var test = new iGo(5);
+		test.placeStone(new Move(1,1,5).index, 1);
 		test.placeStone(new Move(1,0,5).index, 1);
 		test.placeStone(new Move(0,1,5).index, 1);
 		test.placeStone(new Move(2,0,5).index, -1);
 		test.placeStone(new Move(2,1,5).index, -1);
 		test.placeStone(new Move(0,2,5).index, -1);
 		test.placeStone(new Move(1,2,5).index, -1);
-		test.placeStone(new Move(1,1,5).index, -1);
-		test.display();*/
+		test.placeStone(new Move(2,2,5).index, -1);
+		test.placeStone(new Move(0,0,5).index, -1);
+		test.displayBoard();*/
 
 
 		simulationSpeedTest("res\\compliant kgs games",19);
@@ -97,12 +98,29 @@ afterward:
 				}
 				player = -player;
 
-				game.auditLegalMoves();
+				//game.displayBoard(move.index);
+				game.auditLegalMoves("Game Number:"+gamesPlayed+" Move Number:"+movesPlayed);
 			}
 
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
+
+				/*player = 1;
+				game = new iGo(edgeLength);
+
+				int moveNumber = 0;
+				for(var move : moveset)
+				{
+					moveNumber ++;
+					System.out.println("Attempting Move "+moveNumber+" "+player+" to move");
+					if(!game.placeStone(move.index, player))
+					{
+						System.out.println("An Error Occurred Below");
+					}
+					game.displayBoard(move.index);
+					player = -player;
+				}*/
 			}
 
 			gamesPlayed ++;

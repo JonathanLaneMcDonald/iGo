@@ -147,7 +147,7 @@ public class iGo
 	{
 		if(board_index == -1)
 		{
-			ko = -1;
+			cancelKo();
 			return true;
 		}
 
@@ -160,20 +160,31 @@ public class iGo
 
 		if(moveDiag.moveIsLegal)
 		{
-			ArrayList<Integer> enemyStonesCaptured = new ArrayList<>();
+			Set<Integer> enemyStonesCaptured = new HashSet<>();
 
+			var allTheSingleLiberties = new HashSet<Integer>();
 			for(int position : getNeighborsAtPosition(board_index))
 				if(board[position] == -player)
-					if(!hasLiberties(position, -player))
+				{
+					var enemyGroupLiberties = hasLiberties(position, -player);
+
+					if (enemyGroupLiberties.isEmpty())
 						enemyStonesCaptured.addAll(removeGroup(position, -player));
 
+					if(enemyGroupLiberties.size() == 1)
+						allTheSingleLiberties.addAll(enemyGroupLiberties);
+				}
+
 			if(enemyStonesCaptured.size() == 1 && ko == board_index)
-				board[enemyStonesCaptured.get(0)] = -player;
+				board[enemyStonesCaptured.stream().findFirst().get()] = -player;
 			else if(!moveDiag.moveRequiresCaptures || !enemyStonesCaptured.isEmpty())
 			{
-				ko = -1;
-				if(enemyStonesCaptured.size() == 1)
-					ko = enemyStonesCaptured.get(0);
+				cancelKo();
+				if(enemyStonesCaptured.size() == 1 && identifyGroupMembers(enemyStonesCaptured.stream().findFirst().get(), player).size() == 1)
+					ko = enemyStonesCaptured.stream().findFirst().get();
+
+				updateLegalMoves(player, board_index, enemyStonesCaptured, allTheSingleLiberties);
+
 				return true;
 			}
 		}
@@ -183,23 +194,95 @@ public class iGo
 		return false;
 	}
 
+	private void updatePositionLegality(int position)
+	{
+		// now check once for each player
+		assert board[position] == 0;
+
+		board[position] = 1;
+		var diag = moveIsLegalAndRequiresCaptures(position, 1);
+		if(diag.moveIsLegal)
+			legalMovesBlack[position] = 1;
+		else
+			legalMovesBlack[position] = 0;
+
+		board[position] = -1;
+		diag = moveIsLegalAndRequiresCaptures(position, -1);
+		if(diag.moveIsLegal)
+			legalMovesWhite[position] = 1;
+		else
+			legalMovesWhite[position] = 0;
+
+		board[position] = 0;
+	}
+
+	private void cancelKo()
+	{
+		if(ko == -1)
+			return;
+
+		updatePositionLegality(ko);
+		ko = -1;
+	}
+
+	private void updateLegalMoves(int currentPlayer, int movePosition, Set<Integer> enemyStonesCaptured, Set<Integer> AllTheSingleLiberties)
+	{
+		// the current move position is no longer a legal move
+		if(movePosition != -1)
+		{
+			legalMovesBlack[movePosition] = 0;
+			legalMovesWhite[movePosition] = 0;
+		}
+
+		// then check every single liberty and every cleared space to see if they're safe for both players
+		Set<Integer> positionsToCheck = new HashSet<>(enemyStonesCaptured);
+		positionsToCheck.addAll(AllTheSingleLiberties);
+		for(int mv : positionsToCheck)
+			updatePositionLegality(mv);
+
+		// do something about the ko situation
+		if(ko != -1)
+		{
+			if(currentPlayer == 1)
+			{
+				legalMovesBlack[ko] = 1;
+				legalMovesWhite[ko] = 0;
+			}
+			else
+			{
+				legalMovesBlack[ko] = 0;
+				legalMovesWhite[ko] = 1;
+			}
+		}
+	}
+
 	private MoveDiagnostics moveIsLegalAndRequiresCaptures(int board_index, int player)
 	{
 		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == 0))
 			return new MoveDiagnostics(true, false);
 
-		if(hasLiberties(board_index, player))
+		if(!hasLiberties(board_index, player).isEmpty())
 			return new MoveDiagnostics(true, false);
 
-		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == -player && !hasLiberties(pos, -player)))
+		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == -player && hasLiberties(pos, -player).isEmpty()))
 			return new MoveDiagnostics(true, true);
 
 		return new MoveDiagnostics(false, false);
 	}
 
-	private ArrayList<Integer> removeGroup(int position, int player)
+	private Set<Integer> removeGroup(int position, int player)
 	{
-		ArrayList<Integer> removedStones = new ArrayList<>();
+		var groupMembers = identifyGroupMembers(position, player);
+		for(int member : groupMembers)
+			board[member] = 0;
+		return groupMembers;
+	}
+
+	private Set<Integer> identifyGroupMembers(int position, int player)
+	{
+		int[] visited = new int[area];
+
+		Set<Integer> groupMembers = new HashSet<>();
 
 		Stack<Integer> stack = new Stack<>();
 		stack.add(position);
@@ -209,35 +292,36 @@ public class iGo
 		{
 			var newPos = stack.pop();
 
-			stack.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == player).collect(Collectors.toList()));
+			stack.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == player && visited[pos] == 0).collect(Collectors.toList()));
 
-			board[newPos] = 0;
+			visited[newPos] = 1;
 
-			removedStones.add(newPos);
+			groupMembers.add(newPos);
 		}
-		return removedStones;
+		return groupMembers;
 	}
 
-	private boolean hasLiberties(int position, int player)
+	private Set<Integer> hasLiberties(int position, int player)
 	{
 		int[] visited = new int[area];
 
 		Stack<Integer> stack = new Stack<>();
 		stack.add(position);
 
+		Set<Integer> liberties = new HashSet<>();
+
 		while(!stack.empty())
 		{
 			var newPos = stack.pop();
 
-			if(getNeighborsAtPosition(newPos).stream().anyMatch(pos -> board[pos] == 0))
-				return true;
+			liberties.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == 0).collect(Collectors.toList()));
 
 			stack.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == player && visited[pos] == 0).collect(Collectors.toList()));
 
 			visited[newPos] = 1;
 		}
 
-		return false;
+		return liberties;
 	}
 
 	public void displayBoard()	{
@@ -295,7 +379,7 @@ public class iGo
 		System.out.print("\n");
 	}
 
-	public int auditLegalMoves()
+	public int auditLegalMoves(String message)
 	{
 		var discrepancies = new HashSet<Integer>();
 
@@ -307,6 +391,7 @@ public class iGo
 
 		if(!discrepancies.isEmpty())
 		{
+			System.out.println(message);
 			System.out.println("Board State");
 			display(board, discrepancies);
 			System.out.println("Legal Moves");
