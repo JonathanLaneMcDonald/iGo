@@ -22,6 +22,10 @@ public class iGo
 	int ko;
 
 	int[] board;
+
+	int[] legalMovesBlack;
+	int[] legalMovesWhite;
+
 	ArrayList<ArrayList<Integer>> neighbors;
 
 	public iGo(int side)
@@ -32,6 +36,7 @@ public class iGo
 
 		board = new int[area];
 
+		setupLegalMoves();
 		setupNeighbors();
 	}
 
@@ -46,6 +51,8 @@ public class iGo
 		area = other.getArea();
 		ko = other.getKo();
 		board = other.getBoard().clone();
+		legalMovesBlack = other.getLegalMovesBlack().clone();
+		legalMovesWhite = other.getLegalMovesWhite().clone();
 		neighbors = other.getNeighbors();// how does this work in java? i'm fine with a ref, but is this a ref?
 	}
 
@@ -67,6 +74,28 @@ public class iGo
 	public int[] getBoard()
 	{
 		return board;
+	}
+
+	public int[] getLegalMovesBlack()
+	{
+		return legalMovesBlack;
+	}
+
+	public int[] getLegalMovesWhite()
+	{
+		return legalMovesWhite;
+	}
+
+	private void setupLegalMoves()
+	{
+		legalMovesBlack = new int[area];
+		legalMovesWhite = new int[area];
+
+		for(int mv = 0; mv < area; mv++)
+		{
+			legalMovesBlack[mv] = 1;
+			legalMovesWhite[mv] = 1;
+		}
 	}
 
 	public ArrayList<ArrayList<Integer>> getNeighbors()
