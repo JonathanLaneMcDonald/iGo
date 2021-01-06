@@ -162,18 +162,10 @@ public class iGo
 		{
 			Set<Integer> enemyStonesCaptured = new HashSet<>();
 
-			var allTheSingleLiberties = new HashSet<Integer>();
 			for(int position : getNeighborsAtPosition(board_index))
 				if(board[position] == -player)
-				{
-					var enemyGroupLiberties = hasLiberties(position, -player);
-
-					if (enemyGroupLiberties.isEmpty())
+					if (hasLiberties(position).isEmpty())
 						enemyStonesCaptured.addAll(removeGroup(position, -player));
-
-					if(enemyGroupLiberties.size() == 1)
-						allTheSingleLiberties.addAll(enemyGroupLiberties);
-				}
 
 			if(enemyStonesCaptured.size() == 1 && ko == board_index)
 				board[enemyStonesCaptured.stream().findFirst().get()] = -player;
@@ -183,7 +175,7 @@ public class iGo
 				if(enemyStonesCaptured.size() == 1 && identifyGroupMembers(enemyStonesCaptured.stream().findFirst().get(), player).size() == 1)
 					ko = enemyStonesCaptured.stream().findFirst().get();
 
-				updateLegalMoves(player, board_index, enemyStonesCaptured, allTheSingleLiberties);
+				updateLegalMoves(player, board_index, enemyStonesCaptured);
 
 				return true;
 			}
@@ -225,7 +217,7 @@ public class iGo
 		ko = -1;
 	}
 
-	private void updateLegalMoves(int currentPlayer, int movePosition, Set<Integer> enemyStonesCaptured, Set<Integer> AllTheSingleLiberties)
+	private void updateLegalMoves(int currentPlayer, int movePosition, Set<Integer> enemyStonesCaptured)
 	{
 		// the current move position is no longer a legal move
 		if(movePosition != -1)
@@ -235,8 +227,27 @@ public class iGo
 		}
 
 		// then check every single liberty and every cleared space to see if they're safe for both players
-		Set<Integer> positionsToCheck = new HashSet<>(enemyStonesCaptured);
-		positionsToCheck.addAll(AllTheSingleLiberties);
+		Set<Integer> positionsToCheck = new HashSet<>();
+
+		// check liberties near the current move
+		positionsToCheck.addAll(hasLiberties(movePosition));
+
+		// add the removed stones, themselves
+		positionsToCheck.addAll(enemyStonesCaptured);
+
+		// add anything that might be adjacent to the group I just joined
+		for(int stone : identifyAdjacentStones(Collections.singleton(movePosition)))
+			positionsToCheck.addAll(hasLiberties(stone));
+
+		// finally, check liberties of groups that bordered any captured groups
+		for(int stone : identifyAdjacentStones(enemyStonesCaptured))
+			positionsToCheck.addAll(hasLiberties(stone));
+
+		//displayBoard(movePosition);
+		//System.out.println("Below is a map of all positions we're updating for the legality thing");
+		//display(board, positionsToCheck);
+
+		// manually check those positions
 		for(int mv : positionsToCheck)
 			updatePositionLegality(mv);
 
@@ -261,13 +272,21 @@ public class iGo
 		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == 0))
 			return new MoveDiagnostics(true, false);
 
-		if(!hasLiberties(board_index, player).isEmpty())
+		if(!hasLiberties(board_index).isEmpty())
 			return new MoveDiagnostics(true, false);
 
-		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == -player && hasLiberties(pos, -player).isEmpty()))
+		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == -player && hasLiberties(pos).isEmpty()))
 			return new MoveDiagnostics(true, true);
 
 		return new MoveDiagnostics(false, false);
+	}
+
+	private Set<Integer> identifyAdjacentStones(Set<Integer> stones)
+	{
+		Set<Integer> adjacentStones = new HashSet<>();
+		for(int stone : stones)
+			adjacentStones.addAll(getNeighborsAtPosition(stone).stream().filter(pos -> board[pos] != 0).collect(Collectors.toList()));
+		return adjacentStones;
 	}
 
 	private Set<Integer> removeGroup(int position, int player)
@@ -301,8 +320,9 @@ public class iGo
 		return groupMembers;
 	}
 
-	private Set<Integer> hasLiberties(int position, int player)
+	private Set<Integer> hasLiberties(int position)
 	{
+		int player = board[position];
 		int[] visited = new int[area];
 
 		Stack<Integer> stack = new Stack<>();

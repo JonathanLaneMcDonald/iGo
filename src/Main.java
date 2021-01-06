@@ -49,8 +49,8 @@ afterward:
 
 	public static void main(String[] args)
 	{
-
-		/*var test = new iGo(5);
+		/*
+		var test = new iGo(5);
 		test.placeStone(new Move(1,1,5).index, 1);
 		test.placeStone(new Move(1,0,5).index, 1);
 		test.placeStone(new Move(0,1,5).index, 1);
@@ -60,8 +60,8 @@ afterward:
 		test.placeStone(new Move(1,2,5).index, -1);
 		test.placeStone(new Move(2,2,5).index, -1);
 		test.placeStone(new Move(0,0,5).index, -1);
-		test.displayBoard();*/
-
+		test.displayBoard();
+		*/
 
 		simulationSpeedTest("res\\compliant kgs games",19);
 	}
@@ -81,6 +81,7 @@ afterward:
 		int gamesPlayed = 0;
 		int movesPlayed = 0;
 		int gamesWithErrors = 0;
+		int legalMoveErrors = 0;
 		long startTime = System.nanoTime();
 		for(var moveset : movesets)
 		{
@@ -99,37 +100,22 @@ afterward:
 				player = -player;
 
 				//game.displayBoard(move.index);
-				game.auditLegalMoves("Game Number:"+gamesPlayed+" Move Number:"+movesPlayed);
 			}
+
+			legalMoveErrors += game.auditLegalMoves("Game Number:"+gamesPlayed+" Move Number:"+movesPlayed);
 
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
-
-				/*player = 1;
-				game = new iGo(edgeLength);
-
-				int moveNumber = 0;
-				for(var move : moveset)
-				{
-					moveNumber ++;
-					System.out.println("Attempting Move "+moveNumber+" "+player+" to move");
-					if(!game.placeStone(move.index, player))
-					{
-						System.out.println("An Error Occurred Below");
-					}
-					game.displayBoard(move.index);
-					player = -player;
-				}*/
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 10000 == 0)
+			if(gamesPlayed % 1000 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;
 				var timePerMove = elapsedTime / movesPlayed;
-				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")");
+				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")"+" Legal Move Errors: "+legalMoveErrors);
 			}
 		}
 	}
