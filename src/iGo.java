@@ -1,6 +1,4 @@
-import java.util.ArrayList;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class iGo
@@ -273,7 +271,7 @@ public class iGo
 		System.out.print("\n");
 	}
 
-	public void display(int[] a, int[] b, int highlightPosition)
+	public void display(int[] a, int[] b, Set<Integer> highlightPositions)
 	{
 		for(int r = 0; r < side; r++)
 		{
@@ -281,34 +279,34 @@ public class iGo
 			{
 				var position = side*r+c;
 
-				if(position == highlightPosition)		System.out.print("(");
-				else									System.out.print(" ");
+				if(highlightPositions.contains(position))	System.out.print("(");
+				else										System.out.print(" ");
 
-				if(a[side*r+c] == 1 && b[side*r+c] == 1)System.out.print("*");
-				else if(a[side*r+c] == 1)				System.out.print("X");
-				else if(b[side*r+c] == 1)				System.out.print("O");
-				else									System.out.print("-");
+				if(a[side*r+c] == 1 && b[side*r+c] == 1)	System.out.print("*");
+				else if(a[side*r+c] == 1)					System.out.print("X");
+				else if(b[side*r+c] == 1)					System.out.print("O");
+				else										System.out.print("-");
 
-				if(position == highlightPosition)		System.out.print(")");
-				else									System.out.print(" ");
+				if(highlightPositions.contains(position))	System.out.print(")");
+				else										System.out.print(" ");
 			}
 			System.out.print("\n");
 		}
 		System.out.print("\n");
 	}
 
-	private boolean compareLegalMovesLists(int[] a, int[] b)
+	public int auditLegalMoves()
 	{
-		if(a.length != b.length)
-			return false;
+		return 0;
+	}
 
+	private Set<Integer> compareLegalMovesLists(int[] a, int[] b)
+	{
+		var positionsWithErrors = new HashSet<Integer>();
 		for(int i = 0; i < a.length; i++)
-		{
 			if (a[i] != b[i])
-				return false;
-		}
-
-		return true;
+				positionsWithErrors.add(i);
+		return positionsWithErrors;
 	}
 
 	public int[] legalMovesForPlayerBaseline(int player)

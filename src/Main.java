@@ -96,12 +96,6 @@ afterward:
 					gameContainsErrors = true;
 				}
 				player = -player;
-
-				//game.displayBoard(move.index);
-				var legalForBlack = game.legalMovesForPlayerBaseline(1);
-				var legalForWhite = game.legalMovesForPlayerBaseline(-1);
-				/*game.display(legalForBlack, legalForWhite, move.index);
-				System.out.println("Legal Moves");*/
 			}
 
 			if(gameContainsErrors)
