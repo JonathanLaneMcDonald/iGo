@@ -81,7 +81,6 @@ afterward:
 		int gamesPlayed = 0;
 		int movesPlayed = 0;
 		int gamesWithErrors = 0;
-		int legalMoveErrors = 0;
 		long startTime = System.nanoTime();
 		for(var moveset : movesets)
 		{
@@ -102,8 +101,6 @@ afterward:
 				//game.displayBoard(move.index);
 			}
 
-			legalMoveErrors += game.auditLegalMoves("Game Number:"+gamesPlayed+" Move Number:"+movesPlayed);
-
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
@@ -115,7 +112,7 @@ afterward:
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;
 				var timePerMove = elapsedTime / movesPlayed;
-				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")"+" Legal Move Errors: "+legalMoveErrors);
+				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")");
 			}
 		}
 	}
