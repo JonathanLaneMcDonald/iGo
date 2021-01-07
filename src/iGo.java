@@ -1,30 +1,39 @@
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class iGo
 {
-	private static class MoveDiagnostics
-	{
-		public boolean moveIsLegal;
-		public boolean moveRequiresCaptures;
+	/*
+	Method for submitting moves and handling consequences
+		assumptions:
+			1) we start with an empty board and all moves are legal
 
-		public MoveDiagnostics(boolean isLegal, boolean requiresCaptures)
-		{
-			moveIsLegal = isLegal;
-			moveRequiresCaptures = requiresCaptures;
-		}
-	}
+		method for move submission and update:
+		1) check if the move is legal (there's a boolean array for that)
+		2) if legal, place the stone on the board, resulting in a group of one or more stones for the current player
+		3) floodfill the new group with the integer index of the current move, logically connecting all stones in the new group
+			during the floodfill process:
+				I) track board positions of stones are in the current group
+				II) track board positions of liberties belonging to the current group
+				III) record a set of group IDs belonging to the other player (in case we're removing a group, we'll have a list of affected groups to follow up)
+		4) record who owns the newly created group and how many liberties it has by making two assignments, one in ownership and one in liberties
+		5) repeat steps 3 and 4 for any adjacent belonging to the other player
+		6) if a group runs out of liberties, then repeat step 3, send the group stones array to a "remove stones" method, and update bordering groups accordingly
+		7) if a group has a single liberty, then visit that liberty to see if it can connect to get more liberties. if not, i think it's a suicide.
+	 */
 
 	int side;
 	int area;
 	int ko;
 
 	int[] board;
+	int[] ownership;
+	int[] liberties;
+	int[] legalForBlack;
+	int[] legalForWhite;
 
-	int[] legalMovesBlack;
-	int[] legalMovesWhite;
-
-	ArrayList<ArrayList<Integer>> neighbors;
+	static ArrayList<ArrayList<Integer>> neighbors;
 
 	public iGo(int side)
 	{
@@ -33,72 +42,23 @@ public class iGo
 		ko = -1;
 
 		board = new int[area];
+		ownership = new int[area];
+		liberties = new int[area];
 
 		setupLegalMoves();
 		setupNeighbors();
 	}
 
-	public iGo()
-	{
-		this(9);
-	}
-
-	public iGo(iGo other)
-	{
-		side = other.getSide();
-		area = other.getArea();
-		ko = other.getKo();
-		board = other.getBoard().clone();
-		legalMovesBlack = other.getLegalMovesBlack().clone();
-		legalMovesWhite = other.getLegalMovesWhite().clone();
-		neighbors = other.getNeighbors();// how does this work in java? i'm fine with a ref, but is this a ref?
-	}
-
-	public int getSide()
-	{
-		return side;
-	}
-
-	public int getArea()
-	{
-		return area;
-	}
-
-	public int getKo()
-	{
-		return ko;
-	}
-
-	public int[] getBoard()
-	{
-		return board;
-	}
-
-	public int[] getLegalMovesBlack()
-	{
-		return legalMovesBlack;
-	}
-
-	public int[] getLegalMovesWhite()
-	{
-		return legalMovesWhite;
-	}
-
 	private void setupLegalMoves()
 	{
-		legalMovesBlack = new int[area];
-		legalMovesWhite = new int[area];
+		legalForBlack = new int[area];
+		legalForWhite = new int[area];
 
-		for(int mv = 0; mv < area; mv++)
+		for(int i = 0; i < area; i++)
 		{
-			legalMovesBlack[mv] = 1;
-			legalMovesWhite[mv] = 1;
+			legalForBlack[i] = 1;
+			legalForWhite[i] = 1;
 		}
-	}
-
-	public ArrayList<ArrayList<Integer>> getNeighbors()
-	{
-		return neighbors;
 	}
 
 	private ArrayList<Integer> getNeighborsAtPosition(int board_index)
@@ -133,232 +93,178 @@ public class iGo
 		}
 	}
 
-	public Optional<iGo> copyOnPlaceStone(int position, int player, boolean updateLegalMoves)
+	public boolean placeStone(int mv, int player)
 	{
-		var newState = new iGo(this);
-
-		if(newState.placeStone(position, player, updateLegalMoves))
-			return Optional.of(newState);
-
-		return Optional.empty();
-	}
-
-	public boolean placeStone(int board_index, int player)
-	{
-		return placeStone(board_index, player, true);
-	}
-
-	public boolean placeStone(int board_index, int player, boolean updateLegalMoves)
-	{
-		if(board_index == -1)
+		if(mv == -1)
 		{
-			cancelKo();
+			//cancelKo();
 			return true;
 		}
-
-		if(board[board_index] != 0)
+		else if(mv < 0 || area <= mv)
 			return false;
 
-		board[board_index] = player;
-
-		var moveDiag = moveIsLegalAndRequiresCaptures(board_index, player);
-
-		if(moveDiag.moveIsLegal)
+		if((player == 1 && legalForBlack[mv] == 1) || (player == -1 && legalForWhite[mv] == 1))
 		{
-			Set<Integer> enemyStonesCaptured = new HashSet<>();
+			var libertiesNeedingReview = new HashSet<Integer>();
 
-			for(int position : getNeighborsAtPosition(board_index))
-				if(board[position] == -player)
-					if (hasLiberties(position).isEmpty())
-						enemyStonesCaptured.addAll(removeGroup(position, -player));
-
-			if(enemyStonesCaptured.size() == 1 && ko == board_index)
-				board[enemyStonesCaptured.stream().findFirst().get()] = -player;
-			else if(!moveDiag.moveRequiresCaptures || !enemyStonesCaptured.isEmpty())
+			/*
+			first, handle my group. This involves:
+			1) transferring ownership of the current position to myself
+			2) updating the groupID to the current move position and recording information about ownership and liberties
+			 */
 			{
-				cancelKo();
-				if(enemyStonesCaptured.size() == 1 && identifyGroupMembers(enemyStonesCaptured.stream().findFirst().get(), player).size() == 1)
-					ko = enemyStonesCaptured.stream().findFirst().get();
+				board[mv] = mv;
+				ownership[mv] = player;
+				var ffr = floodfill(mv);
+				liberties[ffr.groupID] = ffr.groupLiberties.size();
 
-				if(updateLegalMoves)
-					updateLegalMoves(player, board_index, enemyStonesCaptured);
+				if(ffr.groupLiberties.size() == 1)
+					libertiesNeedingReview.addAll(ffr.groupLiberties);
 
-				return true;
+				//System.out.println(player == 1 ? "Black to move" : "White to move");
+				//display(new HashSet<>(Collections.singletonList(mv)));
+
+				//System.out.println("Step 1: Handle Current Player's Group");
+				//displayFloodfillResult(ffr);
 			}
-		}
 
-		board[board_index] = 0;
-
-		return false;
-	}
-
-	private void updatePositionLegality(int position)
-	{
-		// now check once for each player
-		assert board[position] == 0;
-
-		board[position] = 1;
-		var diag = moveIsLegalAndRequiresCaptures(position, 1);
-		if(diag.moveIsLegal)
-			legalMovesBlack[position] = 1;
-		else
-			legalMovesBlack[position] = 0;
-
-		board[position] = -1;
-		diag = moveIsLegalAndRequiresCaptures(position, -1);
-		if(diag.moveIsLegal)
-			legalMovesWhite[position] = 1;
-		else
-			legalMovesWhite[position] = 0;
-
-		board[position] = 0;
-	}
-
-	private void cancelKo()
-	{
-		if(ko == -1)
-			return;
-
-		updatePositionLegality(ko);
-		ko = -1;
-	}
-
-	private void updateLegalMoves(int currentPlayer, int movePosition, Set<Integer> enemyStonesCaptured)
-	{
-		// the current move position is no longer a legal move
-		if(movePosition != -1)
-		{
-			legalMovesBlack[movePosition] = 0;
-			legalMovesWhite[movePosition] = 0;
-		}
-
-		// then check every single liberty and every cleared space to see if they're safe for both players
-		Set<Integer> positionsToCheck = new HashSet<>();
-
-		// check liberties near the current move
-		positionsToCheck.addAll(hasLiberties(movePosition));
-
-		// add the removed stones, themselves
-		positionsToCheck.addAll(enemyStonesCaptured);
-
-		// add anything that might be adjacent to the group I just joined
-		for(int stone : identifyAdjacentStones(Collections.singleton(movePosition)))
-			positionsToCheck.addAll(hasLiberties(stone));
-
-		// finally, check liberties of groups that bordered any captured groups
-		for(int stone : identifyAdjacentStones(enemyStonesCaptured))
-			positionsToCheck.addAll(hasLiberties(stone));
-
-		//displayBoard(movePosition);
-		//System.out.println("Below is a map of all positions we're updating for the legality thing");
-		//display(board, positionsToCheck);
-
-		// manually check those positions
-		for(int mv : positionsToCheck)
-			updatePositionLegality(mv);
-
-		// do something about the ko situation
-		if(ko != -1)
-		{
-			if(currentPlayer == 1)
+			/*
+			second, handle any enemy groups that might be nearby
+			1) look through a list of neighbors to identify any nearby enemy groups
+			2) update their liberty counts in the table
+			3) if any of them has been reduced to zero liberties, remove the group by unregistering it from the ownership array
+				4) if a group is removed, update the liberty counts of its adjacent groups
+				5) if updating a group's liberty count from 1 to a larger number, check to see if that liberty's legality needs updating
+			 */
+			for(int pos : getNeighborsAtPosition(mv).stream().filter(p -> ownership[board[p]] == -player).collect(Collectors.toList()))
 			{
-				legalMovesBlack[ko] = 1;
-				legalMovesWhite[ko] = 0;
+				var ffr = floodfill(pos);
+				if(ffr.groupLiberties.isEmpty())
+				{
+					ownership[ffr.groupID] = 0;
+
+					//System.out.println("These Stones Have Been Captured");
+					//display(ffr.groupStones);
+
+					for(int groupID : ffr.adjacentGroups)
+					{
+						var adj = floodfill(groupID);
+
+						if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size())
+						{
+							//System.out.println("These Adjacent Stones Are No Longer In Atari");
+							//display(adj.groupStones);
+
+							libertiesNeedingReview.addAll(adj.groupLiberties);
+						}
+
+						liberties[groupID] = adj.groupLiberties.size();
+					}
+				}
+				else
+				{
+					if(ffr.groupLiberties.size() == 1)
+					{
+						//System.out.println("These Stones Are Now In Atari");
+						//display(ffr.groupStones);
+
+						libertiesNeedingReview.addAll(ffr.groupLiberties);
+					}
+
+					liberties[ffr.groupID] = ffr.groupLiberties.size();
+				}
+
+				//System.out.println("Step 2: Handle Adjacent Groups");
+				//displayFloodfillResult(ffr);
+			}
+
+			/*
+			third, once the groups and liberties are updated, maybe I can use them to update the legal moves
+			 */
+
+			System.out.println(player == 1 ? "Black to move" : "White to move");
+			display(new HashSet<>(Collections.singletonList(mv)));
+
+			System.out.println("Liberties To Review");
+			display(libertiesNeedingReview);
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	private class FloodfillResult
+	{
+		public int groupID;
+		public Set<Integer> groupStones;
+		public Set<Integer> groupLiberties;
+		public Set<Integer> adjacentGroups;
+
+		public FloodfillResult(int groupID)
+		{
+			this.groupID = groupID;
+			groupStones = new HashSet<>();
+			groupLiberties = new HashSet<>();
+			adjacentGroups = new HashSet<>();
+		}
+	}
+
+	private FloodfillResult floodfill(int mv)
+	{
+		var ffr = new FloodfillResult(mv);
+
+		var toVisit = new Stack<Integer>();
+		toVisit.push(mv);
+
+		var visited = new int[area];
+
+		while(!toVisit.empty())
+		{
+			var position = toVisit.pop();
+
+			if(ownership[board[position]] == ownership[mv])
+			{
+				/*	if it's part of my group, reassign the groupID to the move position - it's simple, quick, and unique */
+				board[position] = mv;
+				ffr.groupStones.add(position);
+				toVisit.addAll(getNeighborsAtPosition(position).stream().filter(p -> visited[p] == 0).collect(Collectors.toList()));
+			}
+			else if(ownership[board[position]] == 0)
+			{
+				/* if it borders my group and nobody owns it, then it's a liberty */
+				ffr.groupLiberties.add(position);
 			}
 			else
 			{
-				legalMovesBlack[ko] = 0;
-				legalMovesWhite[ko] = 1;
+				/* if the other player owns it, then it's an adjacent group and may be affected by things that happen to this group,
+				* so i'll keep track of the value at the board position which is, necessarily, a position within the group ;) */
+				ffr.adjacentGroups.add(board[position]);
 			}
-		}
-	}
 
-	private MoveDiagnostics moveIsLegalAndRequiresCaptures(int board_index, int player)
-	{
-		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == 0))
-			return new MoveDiagnostics(true, false);
-
-		if(!hasLiberties(board_index).isEmpty())
-			return new MoveDiagnostics(true, false);
-
-		if(getNeighborsAtPosition(board_index).stream().anyMatch(pos -> board[pos] == -player && hasLiberties(pos).isEmpty()))
-			return new MoveDiagnostics(true, true);
-
-		return new MoveDiagnostics(false, false);
-	}
-
-	private Set<Integer> identifyAdjacentStones(Set<Integer> stones)
-	{
-		Set<Integer> adjacentStones = new HashSet<>();
-		for(int stone : stones)
-			adjacentStones.addAll(getNeighborsAtPosition(stone).stream().filter(pos -> board[pos] != 0).collect(Collectors.toList()));
-		return adjacentStones;
-	}
-
-	private Set<Integer> removeGroup(int position, int player)
-	{
-		var groupMembers = identifyGroupMembers(position, player);
-		for(int member : groupMembers)
-			board[member] = 0;
-		return groupMembers;
-	}
-
-	private Set<Integer> identifyGroupMembers(int position, int player)
-	{
-		int[] visited = new int[area];
-
-		Set<Integer> groupMembers = new HashSet<>();
-
-		Stack<Integer> stack = new Stack<>();
-		stack.add(position);
-		stack.addAll(getNeighborsAtPosition(position).stream().filter(pos -> board[pos] == player).collect(Collectors.toList()));
-
-		while(!stack.empty())
-		{
-			var newPos = stack.pop();
-
-			stack.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == player && visited[pos] == 0).collect(Collectors.toList()));
-
-			visited[newPos] = 1;
-
-			groupMembers.add(newPos);
-		}
-		return groupMembers;
-	}
-
-	private Set<Integer> hasLiberties(int position)
-	{
-		int player = board[position];
-		int[] visited = new int[area];
-
-		Stack<Integer> stack = new Stack<>();
-		stack.add(position);
-
-		Set<Integer> liberties = new HashSet<>();
-
-		while(!stack.empty())
-		{
-			var newPos = stack.pop();
-
-			liberties.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == 0).collect(Collectors.toList()));
-
-			stack.addAll(getNeighborsAtPosition(newPos).stream().filter(pos -> board[pos] == player && visited[pos] == 0).collect(Collectors.toList()));
-
-			visited[newPos] = 1;
+			visited[position] = 1;
 		}
 
-		return liberties;
+		return ffr;
 	}
 
-	public void displayBoard()	{
-		display(board, new HashSet<>(Collections.singletonList(-1)));
+	public void displayFloodfillResult(FloodfillResult ffr)
+	{
+		System.out.println("Group Stones");
+		display(ffr.groupStones);
+
+		System.out.println("Group Liberties");
+		display(ffr.groupLiberties);
+
+		var adjacentGroupStones = new HashSet<Integer>();
+		for(int groupID : ffr.adjacentGroups)
+			adjacentGroupStones.addAll(floodfill(groupID).groupStones);
+
+		System.out.println("Adjacent Group Stones");
+		display(adjacentGroupStones);
 	}
 
-	public void displayBoard(int position)	{
-		display(board, new HashSet<>(Collections.singletonList(position)));
-	}
-
-	public void display(int[] array, Set<Integer> highlightPositions)
+	public void display(Set<Integer> highlightPositions)
 	{
 		for(int r = 0; r < side; r++)
 		{
@@ -369,9 +275,9 @@ public class iGo
 				if(highlightPositions.contains(position))	System.out.print("(");
 				else										System.out.print(" ");
 
-				if(array[side*r+c] == 1)					System.out.print("X");
-				if(array[side*r+c] == -1)					System.out.print("O");
-				if(array[side*r+c] == 0)					System.out.print("-");
+				if(ownership[board[side*r+c]] == 1)			System.out.print("X");
+				if(ownership[board[side*r+c]] == -1)		System.out.print("O");
+				if(ownership[board[side*r+c]] == 0)			System.out.print("-");
 
 				if(highlightPositions.contains(position))	System.out.print(")");
 				else										System.out.print(" ");
@@ -379,80 +285,5 @@ public class iGo
 			System.out.print("\n");
 		}
 		System.out.print("\n");
-	}
-
-	public void display(int[] a, int[] b, Set<Integer> highlightPositions)
-	{
-		for(int r = 0; r < side; r++)
-		{
-			for(int c = 0; c < side; c++)
-			{
-				var position = side*r+c;
-
-				if(highlightPositions.contains(position))	System.out.print("(");
-				else										System.out.print(" ");
-
-				if(a[side*r+c] == 1 && b[side*r+c] == 1)	System.out.print("*");
-				else if(a[side*r+c] == 1)					System.out.print("X");
-				else if(b[side*r+c] == 1)					System.out.print("O");
-				else										System.out.print("-");
-
-				if(highlightPositions.contains(position))	System.out.print(")");
-				else										System.out.print(" ");
-			}
-			System.out.print("\n");
-		}
-		System.out.print("\n");
-	}
-
-	public int auditLegalMoves(String message)
-	{
-		var discrepancies = new HashSet<Integer>();
-
-		var baselineLegalForBlack = legalMovesForPlayerBaseline(1);
-		discrepancies.addAll(compareLegalMovesLists(legalMovesBlack, baselineLegalForBlack));
-
-		var baselineLegalForWhite = legalMovesForPlayerBaseline(-1);
-		discrepancies.addAll(compareLegalMovesLists(legalMovesWhite, baselineLegalForWhite));
-
-		if(!discrepancies.isEmpty())
-		{
-			System.out.println(message);
-			System.out.println("Board State");
-			display(board, discrepancies);
-			System.out.println("Legal Moves");
-			display(baselineLegalForBlack, baselineLegalForWhite, discrepancies);
-			System.out.println("************************************************************");
-		}
-
-		return discrepancies.size();
-	}
-
-	private Set<Integer> compareLegalMovesLists(int[] a, int[] b)
-	{
-		var positionsWithErrors = new HashSet<Integer>();
-		for(int i = 0; i < a.length; i++)
-			if (a[i] != b[i])
-				positionsWithErrors.add(i);
-		return positionsWithErrors;
-	}
-
-	public int[] legalMovesForPlayerBaseline(int player)
-	{
-		var legalMoves = new int[area];
-
-		for(int mv = 0; mv < area; mv++)
-		{
-			if(copyOnPlaceStone(mv, player, false).isPresent())
-			{
-				legalMoves[mv] = 1;
-			}
-			else
-			{
-				legalMoves[mv] = 0;
-			}
-		}
-
-		return legalMoves;
 	}
 }
