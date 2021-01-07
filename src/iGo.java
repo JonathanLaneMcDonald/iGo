@@ -97,7 +97,7 @@ public class iGo
 	{
 		if(mv == -1)
 		{
-			//cancelKo();
+			cancelKo();
 			return true;
 		}
 		else if(mv < 0 || area <= mv)
@@ -143,6 +143,8 @@ public class iGo
 				{
 					ownership[ffr.groupID] = 0;
 
+					libertiesNeedingReview.addAll(ffr.groupStones);
+
 					//System.out.println("These Stones Have Been Captured");
 					//display(ffr.groupStones);
 
@@ -182,16 +184,46 @@ public class iGo
 			third, once the groups and liberties are updated, maybe I can use them to update the legal moves
 			 */
 
-			System.out.println(player == 1 ? "Black to move" : "White to move");
-			display(new HashSet<>(Collections.singletonList(mv)));
+			// if we just put a stone there, then it's not a legal move anymore
+			legalForBlack[mv] = 0;
+			legalForWhite[mv] = 0;
 
-			System.out.println("Liberties To Review");
-			display(libertiesNeedingReview);
+			for(int liberty : libertiesNeedingReview)
+			{
+				// first, if this space is open and there are spaces nearby, then this position is legal for both players
+				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> ownership[board[p]] == 0))
+				{
+					legalForBlack[liberty] = 1;
+					legalForWhite[liberty] = 1;
+				}
+				else
+				{
+					// probably going to need a purpose-built function to check legality for each player
+					legalForBlack[liberty] = positionIsLegalForPlayer(liberty, 1) ? 1 : 0;
+					legalForWhite[liberty] = positionIsLegalForPlayer(liberty, -1) ? 1 : 0;
+				}
+			}
+
+			// finally, don't forget to deal with the ko
+
+			//System.out.println(player == 1 ? "Black to move" : "White to move");
+			//display(new HashSet<>(Collections.singletonList(mv)));
+
+			//System.out.println("Liberties To Review");
+			//display(libertiesNeedingReview);
 
 			return true;
 		}
 		else
 			return false;
+	}
+
+	private boolean positionIsLegalForPlayer(int position, int player)
+	{
+		// check to see if you have any adjacent groups around with at least two liberties, because then it'll work
+		if(getNeighborsAtPosition(position).stream().anyMatch(p -> ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2))
+			return true;
+		return false;
 	}
 
 	private class FloodfillResult
