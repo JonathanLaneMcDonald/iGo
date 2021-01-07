@@ -133,17 +133,22 @@ public class iGo
 		}
 	}
 
-	public Optional<iGo> copyOnPlaceStone(int position, int player)
+	public Optional<iGo> copyOnPlaceStone(int position, int player, boolean updateLegalMoves)
 	{
 		var newState = new iGo(this);
 
-		if(newState.placeStone(position, player))
+		if(newState.placeStone(position, player, updateLegalMoves))
 			return Optional.of(newState);
 
 		return Optional.empty();
 	}
 
 	public boolean placeStone(int board_index, int player)
+	{
+		return placeStone(board_index, player, true);
+	}
+
+	public boolean placeStone(int board_index, int player, boolean updateLegalMoves)
 	{
 		if(board_index == -1)
 		{
@@ -175,7 +180,8 @@ public class iGo
 				if(enemyStonesCaptured.size() == 1 && identifyGroupMembers(enemyStonesCaptured.stream().findFirst().get(), player).size() == 1)
 					ko = enemyStonesCaptured.stream().findFirst().get();
 
-				updateLegalMoves(player, board_index, enemyStonesCaptured);
+				if(updateLegalMoves)
+					updateLegalMoves(player, board_index, enemyStonesCaptured);
 
 				return true;
 			}
@@ -437,7 +443,7 @@ public class iGo
 
 		for(int mv = 0; mv < area; mv++)
 		{
-			if(copyOnPlaceStone(mv, player).isPresent())
+			if(copyOnPlaceStone(mv, player, false).isPresent())
 			{
 				legalMoves[mv] = 1;
 			}

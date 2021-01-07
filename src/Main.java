@@ -110,7 +110,7 @@ afterward:
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 1000 == 0)
+			if(gamesPlayed % 100 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;
