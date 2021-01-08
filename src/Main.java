@@ -63,7 +63,7 @@ afterward:
 		test.placeStone(new Move(0, 1, 5).index, -1);
 */
 
-		simulationSpeedTest("res\\compliant kgs games",19);
+		//simulationSpeedTest("res\\compliant kgs games",19);
 
 		randomSamplerTest(100000, 9);
 	}
@@ -80,14 +80,15 @@ afterward:
 		while(gamesPlayed < gamesToPlay)
 		{
 			int player = 1;
-			var game = new iGo(edgeLength, 3);
+			var game = new iGo(edgeLength);
 			boolean gameContainsErrors = false;
 
 			var random = new Random();
 			boolean gameInProgress = true;
 			while(gameInProgress)
 			{
-				var legalMoves = game.getMovesLegalForBothPlayers();
+				//var legalMoves = game.getMovesLegalForBothPlayers();
+				var legalMoves = game.getMovesLegalForPlayer(player);
 				if(legalMoves.isEmpty())
 					gameInProgress = false;
 				else
@@ -104,8 +105,14 @@ afterward:
 				}
 			}
 
-			game.display(new HashSet<>());
-			game.displayLiberties(new HashSet<>());
+			/*var zombies = game.boardContainsZombieGroups();
+			if(!zombies.isEmpty()) {
+				game.display(zombies);
+				System.out.println("Zombie Stones Found");
+			}*/
+
+			//game.display(new HashSet<>());
+			//game.displayLiberties(new HashSet<>());
 
 			if(gameContainsErrors)
 			{
@@ -113,7 +120,7 @@ afterward:
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 1000 == 0)
+			if(gamesPlayed % 100 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;

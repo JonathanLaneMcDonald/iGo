@@ -146,8 +146,7 @@ public class iGo
 				var ffr = floodfill(mv);
 				liberties[ffr.groupID] = ffr.groupLiberties.size();
 
-				if(ffr.groupLiberties.size() == 1)
-					libertiesNeedingReview.addAll(ffr.groupLiberties);
+				libertiesNeedingReview.addAll(ffr.groupLiberties);
 
 				if(diagnosticOutput >= 1) {
 					display(new HashSet<>(Collections.singletonList(mv)));
@@ -191,7 +190,7 @@ public class iGo
 					{
 						var adj = floodfill(groupID);
 
-						libertiesNeedingReview.addAll(adj.groupLiberties.stream().filter(p -> !positionIsAvailableToBothPlayers(p)).collect(Collectors.toList()));
+						libertiesNeedingReview.addAll(adj.groupLiberties);
 
 						if(diagnosticOutput >= 2) {
 							if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size()) {
@@ -205,14 +204,13 @@ public class iGo
 				}
 				else
 				{
-					if(ffr.groupLiberties.size() == 1)
-					{
-						if(diagnosticOutput >= 2) {
+					libertiesNeedingReview.addAll(ffr.groupLiberties);
+
+					if(diagnosticOutput >= 2) {
+						if(ffr.groupLiberties.size() == 1) {
 							System.out.println("These Stones Are Now In Atari");
 							display(ffr.groupStones);
 						}
-
-						libertiesNeedingReview.addAll(ffr.groupLiberties);
 					}
 
 					liberties[ffr.groupID] = ffr.groupLiberties.size();
@@ -244,11 +242,6 @@ public class iGo
 				displayGroupsAndOwnership();
 			}
 
-			/*var zombies = boardContainsZombieGroups();
-			if(!zombies.isEmpty()) {
-				display(zombies);
-				System.out.println("Zombie Stones Found");
-			}*/
 			return true;
 		}
 		else
@@ -306,6 +299,17 @@ public class iGo
 			if(legalForBlack[i] == 1 && legalForWhite[i] == 1)
 				legalForBoth.add(i);
 		return legalForBoth;
+	}
+
+	public List<Integer> getMovesLegalForPlayer(int player)
+	{
+		var legalForPlayer = new ArrayList<Integer>();
+		for(int i = 0; i < area; i++)
+			if(player == 1 && legalForBlack[i] == 1)
+				legalForPlayer.add(i);
+			else if(player == -1 && legalForWhite[i] == 1)
+				legalForPlayer.add(i);
+		return legalForPlayer;
 	}
 
 	private boolean positionIsAvailableToBothPlayers(int position)
