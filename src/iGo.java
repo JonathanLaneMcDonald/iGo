@@ -215,13 +215,13 @@ public class iGo
 			 */
 
 			// if we just put a stone there, then it's not a legal move anymore
-/*			legalForBlack[mv] = 0;
+			legalForBlack[mv] = 0;
 			legalForWhite[mv] = 0;
 
 			for(int liberty : libertiesNeedingReview)
 			{
 				// first, if this space is open and there are spaces nearby, then this position is legal for both players
-				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> board[p] < area && ownership[board[p]] == 0))
+				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> board[p] == area || ownership[board[p]] == 0))
 				{
 					legalForBlack[liberty] = 1;
 					legalForWhite[liberty] = 1;
@@ -229,7 +229,7 @@ public class iGo
 				else
 					resolveLegalityAtPosition(liberty);
 			}
-*/
+
 			// finally, don't forget to deal with the ko
 
 			if(diagnosticOutput >= 3) {
