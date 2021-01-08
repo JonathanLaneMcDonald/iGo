@@ -190,14 +190,13 @@ public class iGo
 					{
 						var adj = floodfill(groupID);
 
-						if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size())
-						{
-							if(diagnosticOutput >= 2) {
+						libertiesNeedingReview.addAll(adj.groupLiberties.stream().filter(p -> !positionIsAvailableToBothPlayers(p)).collect(Collectors.toList()));
+
+						if(diagnosticOutput >= 2) {
+							if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size()) {
 								System.out.println("These Adjacent Stones Are No Longer In Atari");
 								display(adj.groupStones);
 							}
-
-							libertiesNeedingReview.addAll(adj.groupLiberties);
 						}
 
 						liberties[groupID] = adj.groupLiberties.size();
@@ -237,7 +236,7 @@ public class iGo
 
 			// finally, don't forget to deal with the ko
 			unregisterKo();
-			if(numberOfStonesRemoved.size() == 1)
+			if(numberOfStonesRemoved.size() == 1 && floodfill(mv).groupStones.size() == 1)
 				registerKo(numberOfStonesRemoved.stream().findFirst().get(), -player);
 
 			if(diagnosticOutput >= 3) {
@@ -251,6 +250,8 @@ public class iGo
 				System.out.println("Failed on the following move");
 				System.out.println(player == 1 ? "Black to move" : "White to move");
 				display(new HashSet<>(Collections.singletonList(mv)));
+				System.out.println("Current Liberties");
+				displayLiberties(new HashSet<>(Collections.singletonList(mv)));
 			}
 
 			return false;
@@ -275,6 +276,11 @@ public class iGo
 	private boolean violatingKo(int position, int player)
 	{
 		return position == ko.koPosition && player == ko.restrictedPlayer;
+	}
+
+	private boolean positionIsAvailableToBothPlayers(int position)
+	{
+		return legalForBlack[position] == 1 && legalForWhite[position] == 1;
 	}
 
 	private void determineLegalityAtPosition(int position)
@@ -371,6 +377,8 @@ public class iGo
 		display(ownership);
 		System.out.println("Group State");
 		display(new HashSet<>());
+		System.out.println("Liberties State");
+		displayLiberties(new HashSet<>());
 	}
 
 	public void displayFloodfillResult(FloodfillResult ffr)
@@ -403,6 +411,30 @@ public class iGo
 				if(board[side*r+c] < area && ownership[board[side*r+c]] == 1)		System.out.print("X");
 				if(board[side*r+c] < area && ownership[board[side*r+c]] == -1)		System.out.print("O");
 				if(area <= board[side*r+c] || ownership[board[side*r+c]] == 0)		System.out.print("-");
+
+				if(highlightPositions.contains(position))	System.out.print(")");
+				else										System.out.print(" ");
+			}
+			System.out.print("\n");
+		}
+		System.out.print("\n");
+	}
+
+	public void displayLiberties(Set<Integer> highlightPositions)
+	{
+		for(int r = 0; r < side; r++)
+		{
+			for(int c = 0; c < side; c++)
+			{
+				var position = side*r+c;
+
+				if(highlightPositions.contains(position))	System.out.print("(");
+				else										System.out.print(" ");
+
+				if(legalForBlack[position] == 1 && legalForWhite[position] == 1)	System.out.print("*");
+				else if(legalForBlack[position] == 1)								System.out.print("X");
+				else if(legalForWhite[position] == 1)								System.out.print("O");
+				else																System.out.print("-");
 
 				if(highlightPositions.contains(position))	System.out.print(")");
 				else										System.out.print(" ");
