@@ -1,6 +1,5 @@
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class iGo
 {
@@ -23,9 +22,21 @@ public class iGo
 		7) if a group has a single liberty, then visit that liberty to see if it can connect to get more liberties. if not, i think it's a suicide.
 	 */
 
+	private class Ko
+	{
+		public int koPosition;
+		public int restrictedPlayer;
+
+		public Ko(int koPosition, int restrictedPlayer)
+		{
+			this.koPosition = koPosition;
+			this.restrictedPlayer = restrictedPlayer;
+		}
+	}
+
 	int side;
 	int area;
-	int ko;
+	Ko ko;
 
 	int[] board;
 	int[] ownership;
@@ -41,7 +52,7 @@ public class iGo
 	{
 		this.side = side;
 		area = side*side;
-		ko = -1;
+		ko = new Ko(-1, -1);
 
 		board = new int[area];
 		for(int stone = 0; stone < area; stone++)
@@ -109,7 +120,7 @@ public class iGo
 	{
 		if(mv == -1)
 		{
-			//cancelKo();
+			unregisterKo();
 			return true;
 		}
 		else if(mv < 0 || area <= mv)
@@ -155,6 +166,7 @@ public class iGo
 				4) if a group is removed, update the liberty counts of its adjacent groups
 				5) if updating a group's liberty count from 1 to a larger number, check to see if that liberty's legality needs updating
 			 */
+			var numberOfStonesRemoved = new HashSet<Integer>();
 			var neighboringStonesToInvestigate = getNeighborsAtPosition(mv).stream().filter(p -> board[p] < area && ownership[board[p]] == -player).collect(Collectors.toCollection(HashSet::new));
 			var neighboringGroupsToInvestigate = neighboringStonesToInvestigate.stream().map(p -> board[p]).collect(Collectors.toCollection(HashSet::new));
 			for(int pos : neighboringGroupsToInvestigate)
@@ -162,6 +174,8 @@ public class iGo
 				var ffr = floodfill(pos);
 				if(ffr.groupLiberties.isEmpty())
 				{
+					numberOfStonesRemoved.addAll(ffr.groupStones);
+
 					for(int removedStone : ffr.groupStones)
 						board[removedStone] = area;
 
@@ -219,18 +233,12 @@ public class iGo
 			legalForWhite[mv] = 0;
 
 			for(int liberty : libertiesNeedingReview)
-			{
-				// first, if this space is open and there are spaces nearby, then this position is legal for both players
-				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> board[p] == area || ownership[board[p]] == 0))
-				{
-					legalForBlack[liberty] = 1;
-					legalForWhite[liberty] = 1;
-				}
-				else
-					resolveLegalityAtPosition(liberty);
-			}
+				determineLegalityAtPosition(liberty);
 
 			// finally, don't forget to deal with the ko
+			unregisterKo();
+			if(numberOfStonesRemoved.size() == 1)
+				registerKo(numberOfStonesRemoved.stream().findFirst().get(), -player);
 
 			if(diagnosticOutput >= 3) {
 				displayGroupsAndOwnership();
@@ -249,17 +257,46 @@ public class iGo
 		}
 	}
 
-	private void resolveLegalityAtPosition(int position)
+	private void registerKo(int koPosition, int restrictedPlayer)
 	{
-		legalForBlack[position] = positionIsLegalForPlayer(position, 1) ? 1 : 0;
-		legalForWhite[position] = positionIsLegalForPlayer(position, -1) ? 1 : 0;
+		ko = new Ko(koPosition, restrictedPlayer);
+		determineLegalityAtPosition(koPosition);
+	}
+
+	private void unregisterKo()
+	{
+		if(ko.koPosition != -1) {
+			var oldKoPosition = ko.koPosition;
+			ko = new Ko(-1, -1);
+			determineLegalityAtPosition(oldKoPosition);
+		}
+	}
+
+	private boolean violatingKo(int position, int player)
+	{
+		return position == ko.koPosition && player == ko.restrictedPlayer;
+	}
+
+	private void determineLegalityAtPosition(int position)
+	{
+		// first, if this space is open and there are spaces nearby, then this position is legal for both players
+		if(getNeighborsAtPosition(position).stream().anyMatch(p -> board[p] == area || ownership[board[p]] == 0))
+		{
+			legalForBlack[position] = 1;
+			legalForWhite[position] = 1;
+		}
+		else
+		{
+			legalForBlack[position] = positionIsLegalForPlayer(position, 1) ? 1 : 0;
+			legalForWhite[position] = positionIsLegalForPlayer(position, -1) ? 1 : 0;
+		}
 	}
 
 	private boolean positionIsLegalForPlayer(int position, int player)
 	{
-		return getNeighborsAtPosition(position).stream().anyMatch(p ->
-				(board[p] < area && ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2) ||
-				(board[p] < area && ownership[board[p]] == -player && floodfill(p).groupLiberties.size() == 1));
+		return !violatingKo(position, player) && getNeighborsAtPosition(position).stream().anyMatch(p ->
+				(board[p] < area && ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2) ||// i can join a friendly group
+				(board[p] < area && ownership[board[p]] == -player && floodfill(p).groupLiberties.size() == 1));// i can capture an enemy group
 	}
 
 	private class FloodfillResult
