@@ -89,7 +89,6 @@ afterward:
 			var game = new iGo(edgeLength);
 			boolean gameContainsErrors = false;
 
-			//System.out.println("Games Played:"+gamesPlayed);
 			for(var move : moveset)
 			{
 				movesPlayed ++;
@@ -99,16 +98,14 @@ afterward:
 					gameContainsErrors = true;
 				}
 				player = -player;
-
-				//game.displayBoard(move.index);
 			}
 
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
-/*
+
 				player = 1;
-				game = new iGo(edgeLength, 3);
+				game = new iGo(edgeLength, 1);
 
 				for(var move : moveset)
 				{
@@ -120,7 +117,7 @@ afterward:
 						System.out.println("An Error Occurred");
 					}
 					player = -player;
-				}*/
+				}
 			}
 
 			gamesPlayed ++;
