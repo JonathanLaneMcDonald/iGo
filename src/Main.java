@@ -50,20 +50,6 @@ afterward:
 
 	public static void main(String[] args)
 	{
-/*
-		var test = new iGo(5, 4);
-		test.placeStone(new Move(1,1,5).index, 1);
-		test.placeStone(new Move(1,0,5).index, 1);
-		test.placeStone(new Move(0,1,5).index, 1);
-		test.placeStone(new Move(2,0,5).index, -1);
-		test.placeStone(new Move(2,1,5).index, -1);
-		test.placeStone(new Move(0,2,5).index, -1);
-		test.placeStone(new Move(1,2,5).index, -1);
-		test.placeStone(new Move(2,2,5).index, -1);
-		test.placeStone(new Move(0,0,5).index, -1);
-		test.display(new HashSet<>());
-*/
-
 		simulationSpeedTest("res\\compliant kgs games",19);
 	}
 
@@ -103,21 +89,6 @@ afterward:
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
-
-				player = 1;
-				game = new iGo(edgeLength, 1);
-
-				for(var move : moveset)
-				{
-					movesPlayed ++;
-					System.out.println("********************************************************************************");
-					System.out.println("Move Number:"+movesPlayed);
-					if(!game.placeStone(move.index, player))
-					{
-						System.out.println("An Error Occurred");
-					}
-					player = -player;
-				}
 			}
 
 			gamesPlayed ++;

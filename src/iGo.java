@@ -136,10 +136,6 @@ public class iGo
 			2) updating the groupID to the current move position and recording information about ownership and liberties
 			 */
 			{
-				if(diagnosticOutput >= 1) {
-					System.out.println(player == 1 ? "Black to move" : "White to move");
-				}
-
 				board[mv] = mv;
 				ownership[mv] = player;
 				var ffr = floodfill(mv);
@@ -147,15 +143,6 @@ public class iGo
 
 				if(ffr.groupLiberties.size() == 1)
 					libertiesNeedingReview.addAll(ffr.groupLiberties);
-
-				if(diagnosticOutput >= 1) {
-					display(new HashSet<>(Collections.singletonList(mv)));
-				}
-
-				if(diagnosticOutput >= 2) {
-					System.out.println("Step 1: Handle Current Player's Group");
-					displayFloodfillResult(ffr);
-				}
 			}
 
 			/*
@@ -181,23 +168,11 @@ public class iGo
 
 					libertiesNeedingReview.addAll(ffr.groupStones);
 
-					if(diagnosticOutput >= 2) {
-						System.out.println("These Stones Have Been Captured");
-						display(ffr.groupStones);
-					}
-
 					for(int groupID : ffr.adjacentGroups)
 					{
 						var adj = floodfill(groupID);
 
 						libertiesNeedingReview.addAll(adj.groupLiberties.stream().filter(p -> !positionIsAvailableToBothPlayers(p)).collect(Collectors.toList()));
-
-						if(diagnosticOutput >= 2) {
-							if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size()) {
-								System.out.println("These Adjacent Stones Are No Longer In Atari");
-								display(adj.groupStones);
-							}
-						}
 
 						liberties[groupID] = adj.groupLiberties.size();
 					}
@@ -205,21 +180,9 @@ public class iGo
 				else
 				{
 					if(ffr.groupLiberties.size() == 1)
-					{
-						if(diagnosticOutput >= 2) {
-							System.out.println("These Stones Are Now In Atari");
-							display(ffr.groupStones);
-						}
-
 						libertiesNeedingReview.addAll(ffr.groupLiberties);
-					}
 
 					liberties[ffr.groupID] = ffr.groupLiberties.size();
-				}
-
-				if(diagnosticOutput >= 2) {
-					System.out.println("Step 2: Handle Adjacent Groups");
-					displayFloodfillResult(ffr);
 				}
 			}
 
@@ -239,23 +202,10 @@ public class iGo
 			if(numberOfStonesRemoved.size() == 1 && floodfill(mv).groupStones.size() == 1)
 				registerKo(numberOfStonesRemoved.stream().findFirst().get(), -player);
 
-			if(diagnosticOutput >= 3) {
-				displayGroupsAndOwnership();
-			}
 			return true;
 		}
 		else
-		{
-			if(diagnosticOutput >= 1) {
-				System.out.println("Failed on the following move");
-				System.out.println(player == 1 ? "Black to move" : "White to move");
-				display(new HashSet<>(Collections.singletonList(mv)));
-				System.out.println("Current Liberties");
-				displayLiberties(new HashSet<>(Collections.singletonList(mv)));
-			}
-
 			return false;
-		}
 	}
 
 	private void registerKo(int koPosition, int restrictedPlayer)
@@ -325,13 +275,6 @@ public class iGo
 	{
 		var ffr = new FloodfillResult(mv);
 
-		if(area <= board[mv] || ownership[board[mv]] == 0) {
-			//displayGroupsAndOwnership();
-			System.out.println("Floodfill finds that the current cell has no owner");
-
-			return ffr;
-		}
-
 		var toVisit = new Stack<Integer>();
 		toVisit.push(mv);
 
@@ -359,9 +302,6 @@ public class iGo
 				* so i'll keep track of the value at the board position which is, necessarily, a position within the group ;) */
 				ffr.adjacentGroups.add(board[position]);
 			}
-
-			if(diagnosticOutput >= 4)
-				displayGroupsAndOwnership();
 
 			visited[position] = 1;
 		}
