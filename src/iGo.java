@@ -1,5 +1,6 @@
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class iGo
 {
@@ -242,6 +243,12 @@ public class iGo
 			if(diagnosticOutput >= 3) {
 				displayGroupsAndOwnership();
 			}
+
+			/*var zombies = boardContainsZombieGroups();
+			if(!zombies.isEmpty()) {
+				display(zombies);
+				System.out.println("Zombie Stones Found");
+			}*/
 			return true;
 		}
 		else
@@ -276,6 +283,29 @@ public class iGo
 	private boolean violatingKo(int position, int player)
 	{
 		return position == ko.koPosition && player == ko.restrictedPlayer;
+	}
+
+	public Set<Integer> boardContainsZombieGroups()
+	{
+		var questionableStones = new HashSet<Integer>();
+		for(int i = 0; i < area; i++)
+		{
+			if(board[i] < area && ownership[board[i]] != 0) {
+				var result = floodfill(i);
+				if (result.groupLiberties.isEmpty())
+					questionableStones.add(i);
+			}
+		}
+		return questionableStones;
+	}
+
+	public List<Integer> getMovesLegalForBothPlayers()
+	{
+		var legalForBoth = new ArrayList<Integer>();
+		for(int i = 0; i < area; i++)
+			if(legalForBlack[i] == 1 && legalForWhite[i] == 1)
+				legalForBoth.add(i);
+		return legalForBoth;
 	}
 
 	private boolean positionIsAvailableToBothPlayers(int position)
