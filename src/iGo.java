@@ -33,9 +33,11 @@ public class iGo
 	int[] legalForBlack;
 	int[] legalForWhite;
 
+	int diagnosticOutput;
+
 	static ArrayList<ArrayList<Integer>> neighbors;
 
-	public iGo(int side)
+	public iGo(int side, int diagnosticLevel)
 	{
 		this.side = side;
 		area = side*side;
@@ -45,8 +47,15 @@ public class iGo
 		ownership = new int[area];
 		liberties = new int[area];
 
+		diagnosticOutput = diagnosticLevel;
+
 		setupLegalMoves();
 		setupNeighbors();
+	}
+
+	public iGo(int side)
+	{
+		this(side, 0);
 	}
 
 	private void setupLegalMoves()
@@ -97,7 +106,7 @@ public class iGo
 	{
 		if(mv == -1)
 		{
-			cancelKo();
+			//cancelKo();
 			return true;
 		}
 		else if(mv < 0 || area <= mv)
@@ -121,11 +130,15 @@ public class iGo
 				if(ffr.groupLiberties.size() == 1)
 					libertiesNeedingReview.addAll(ffr.groupLiberties);
 
-				//System.out.println(player == 1 ? "Black to move" : "White to move");
-				//display(new HashSet<>(Collections.singletonList(mv)));
+				if(diagnosticOutput >= 1) {
+					System.out.println(player == 1 ? "Black to move" : "White to move");
+					display(new HashSet<>(Collections.singletonList(mv)));
+				}
 
-				//System.out.println("Step 1: Handle Current Player's Group");
-				//displayFloodfillResult(ffr);
+				if(diagnosticOutput >= 2) {
+					System.out.println("Step 1: Handle Current Player's Group");
+					displayFloodfillResult(ffr);
+				}
 			}
 
 			/*
@@ -136,7 +149,9 @@ public class iGo
 				4) if a group is removed, update the liberty counts of its adjacent groups
 				5) if updating a group's liberty count from 1 to a larger number, check to see if that liberty's legality needs updating
 			 */
-			for(int pos : getNeighborsAtPosition(mv).stream().filter(p -> ownership[board[p]] == -player).collect(Collectors.toList()))
+			var neighboringStonesToInvestigate = getNeighborsAtPosition(mv).stream().filter(p -> ownership[board[p]] == -player).collect(Collectors.toCollection(HashSet::new));
+			var neighboringGroupsToInvestigate = neighboringStonesToInvestigate.stream().map(p -> board[p]).collect(Collectors.toCollection(HashSet::new));
+			for(int pos : neighboringGroupsToInvestigate)
 			{
 				var ffr = floodfill(pos);
 				if(ffr.groupLiberties.isEmpty())
@@ -145,8 +160,10 @@ public class iGo
 
 					libertiesNeedingReview.addAll(ffr.groupStones);
 
-					//System.out.println("These Stones Have Been Captured");
-					//display(ffr.groupStones);
+					if(diagnosticOutput >= 2) {
+						System.out.println("These Stones Have Been Captured");
+						display(ffr.groupStones);
+					}
 
 					for(int groupID : ffr.adjacentGroups)
 					{
@@ -154,8 +171,10 @@ public class iGo
 
 						if(liberties[groupID] == 1 && liberties[groupID] < adj.groupLiberties.size())
 						{
-							//System.out.println("These Adjacent Stones Are No Longer In Atari");
-							//display(adj.groupStones);
+							if(diagnosticOutput >= 2) {
+								System.out.println("These Adjacent Stones Are No Longer In Atari");
+								display(adj.groupStones);
+							}
 
 							libertiesNeedingReview.addAll(adj.groupLiberties);
 						}
@@ -167,8 +186,10 @@ public class iGo
 				{
 					if(ffr.groupLiberties.size() == 1)
 					{
-						//System.out.println("These Stones Are Now In Atari");
-						//display(ffr.groupStones);
+						if(diagnosticOutput >= 2) {
+							System.out.println("These Stones Are Now In Atari");
+							display(ffr.groupStones);
+						}
 
 						libertiesNeedingReview.addAll(ffr.groupLiberties);
 					}
@@ -176,8 +197,10 @@ public class iGo
 					liberties[ffr.groupID] = ffr.groupLiberties.size();
 				}
 
-				//System.out.println("Step 2: Handle Adjacent Groups");
-				//displayFloodfillResult(ffr);
+				if(diagnosticOutput >= 2) {
+					System.out.println("Step 2: Handle Adjacent Groups");
+					displayFloodfillResult(ffr);
+				}
 			}
 
 			/*
@@ -185,7 +208,7 @@ public class iGo
 			 */
 
 			// if we just put a stone there, then it's not a legal move anymore
-			legalForBlack[mv] = 0;
+			/*legalForBlack[mv] = 0;
 			legalForWhite[mv] = 0;
 
 			for(int liberty : libertiesNeedingReview)
@@ -197,33 +220,37 @@ public class iGo
 					legalForWhite[liberty] = 1;
 				}
 				else
-				{
-					// probably going to need a purpose-built function to check legality for each player
-					legalForBlack[liberty] = positionIsLegalForPlayer(liberty, 1) ? 1 : 0;
-					legalForWhite[liberty] = positionIsLegalForPlayer(liberty, -1) ? 1 : 0;
-				}
-			}
+					resolveLegalityAtPosition(liberty);
+			}*/
 
 			// finally, don't forget to deal with the ko
 
-			//System.out.println(player == 1 ? "Black to move" : "White to move");
-			//display(new HashSet<>(Collections.singletonList(mv)));
-
-			//System.out.println("Liberties To Review");
-			//display(libertiesNeedingReview);
-
+			if(diagnosticOutput >= 3) {
+				displayGroupsAndOwnership();
+			}
 			return true;
 		}
 		else
+		{
+			if(diagnosticOutput >= 1) {
+				System.out.println("Failed on the following move");
+				System.out.println(player == 1 ? "Black to move" : "White to move");
+				display(new HashSet<>(Collections.singletonList(mv)));
+			}
+
 			return false;
+		}
+	}
+
+	private void resolveLegalityAtPosition(int position)
+	{
+		legalForBlack[position] = positionIsLegalForPlayer(position, 1) ? 1 : 0;
+		legalForWhite[position] = positionIsLegalForPlayer(position, -1) ? 1 : 0;
 	}
 
 	private boolean positionIsLegalForPlayer(int position, int player)
 	{
-		// check to see if you have any adjacent groups around with at least two liberties, because then it'll work
-		if(getNeighborsAtPosition(position).stream().anyMatch(p -> ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2))
-			return true;
-		return false;
+		return getNeighborsAtPosition(position).stream().anyMatch(p -> (ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2) || (ownership[board[p]] == -player && floodfill(p).groupLiberties.size() == 1));
 	}
 
 	private class FloodfillResult
@@ -244,6 +271,10 @@ public class iGo
 
 	private FloodfillResult floodfill(int mv)
 	{
+		if(ownership[board[mv]] == 0) {
+			//displayGroupsAndOwnership();
+			System.out.println("Floodfill finds that the current cell has no owner");
+		}
 		var ffr = new FloodfillResult(mv);
 
 		var toVisit = new Stack<Integer>();
@@ -274,10 +305,19 @@ public class iGo
 				ffr.adjacentGroups.add(board[position]);
 			}
 
+			if(diagnosticOutput >= 4)
+				displayGroupsAndOwnership();
+
 			visited[position] = 1;
 		}
 
 		return ffr;
+	}
+
+	public void displayGroupsAndOwnership()
+	{
+		System.out.println("Group Affiliation");
+		display(board);
 	}
 
 	public void displayFloodfillResult(FloodfillResult ffr)
@@ -312,6 +352,27 @@ public class iGo
 				if(ownership[board[side*r+c]] == 0)			System.out.print("-");
 
 				if(highlightPositions.contains(position))	System.out.print(")");
+				else										System.out.print(" ");
+			}
+			System.out.print("\n");
+		}
+		System.out.print("\n");
+	}
+
+	public void display(int[] array)
+	{
+		for(int r = 0; r < side; r++)
+		{
+			for(int c = 0; c < side; c++)
+			{
+				var position = side*r+c;
+
+				if(position == array[position])				System.out.print("(");
+				else										System.out.print(" ");
+
+				System.out.printf("%1$4s",array[position]*ownership[array[position]]);
+
+				if(position == array[position])				System.out.print(")");
 				else										System.out.print(" ");
 			}
 			System.out.print("\n");
