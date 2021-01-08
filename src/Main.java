@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class Main
@@ -49,8 +50,8 @@ afterward:
 
 	public static void main(String[] args)
 	{
-		/*
-		var test = new iGo(5);
+/*
+		var test = new iGo(5, 4);
 		test.placeStone(new Move(1,1,5).index, 1);
 		test.placeStone(new Move(1,0,5).index, 1);
 		test.placeStone(new Move(0,1,5).index, 1);
@@ -60,8 +61,8 @@ afterward:
 		test.placeStone(new Move(1,2,5).index, -1);
 		test.placeStone(new Move(2,2,5).index, -1);
 		test.placeStone(new Move(0,0,5).index, -1);
-		test.displayBoard();
-		*/
+		test.display(new HashSet<>());
+*/
 
 		simulationSpeedTest("res\\compliant kgs games",19);
 	}
@@ -88,6 +89,7 @@ afterward:
 			var game = new iGo(edgeLength);
 			boolean gameContainsErrors = false;
 
+			//System.out.println("Games Played:"+gamesPlayed);
 			for(var move : moveset)
 			{
 				movesPlayed ++;
@@ -104,10 +106,25 @@ afterward:
 			if(gameContainsErrors)
 			{
 				gamesWithErrors ++;
+/*
+				player = 1;
+				game = new iGo(edgeLength, 3);
+
+				for(var move : moveset)
+				{
+					movesPlayed ++;
+					System.out.println("********************************************************************************");
+					System.out.println("Move Number:"+movesPlayed);
+					if(!game.placeStone(move.index, player))
+					{
+						System.out.println("An Error Occurred");
+					}
+					player = -player;
+				}*/
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 100 == 0)
+			if(gamesPlayed % 1000 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;

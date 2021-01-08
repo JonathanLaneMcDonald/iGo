@@ -44,6 +44,9 @@ public class iGo
 		ko = -1;
 
 		board = new int[area];
+		for(int stone = 0; stone < area; stone++)
+			board[stone] = area;
+
 		ownership = new int[area];
 		liberties = new int[area];
 
@@ -122,6 +125,10 @@ public class iGo
 			2) updating the groupID to the current move position and recording information about ownership and liberties
 			 */
 			{
+				if(diagnosticOutput >= 1) {
+					System.out.println(player == 1 ? "Black to move" : "White to move");
+				}
+
 				board[mv] = mv;
 				ownership[mv] = player;
 				var ffr = floodfill(mv);
@@ -131,7 +138,6 @@ public class iGo
 					libertiesNeedingReview.addAll(ffr.groupLiberties);
 
 				if(diagnosticOutput >= 1) {
-					System.out.println(player == 1 ? "Black to move" : "White to move");
 					display(new HashSet<>(Collections.singletonList(mv)));
 				}
 
@@ -149,14 +155,15 @@ public class iGo
 				4) if a group is removed, update the liberty counts of its adjacent groups
 				5) if updating a group's liberty count from 1 to a larger number, check to see if that liberty's legality needs updating
 			 */
-			var neighboringStonesToInvestigate = getNeighborsAtPosition(mv).stream().filter(p -> ownership[board[p]] == -player).collect(Collectors.toCollection(HashSet::new));
+			var neighboringStonesToInvestigate = getNeighborsAtPosition(mv).stream().filter(p -> board[p] < area && ownership[board[p]] == -player).collect(Collectors.toCollection(HashSet::new));
 			var neighboringGroupsToInvestigate = neighboringStonesToInvestigate.stream().map(p -> board[p]).collect(Collectors.toCollection(HashSet::new));
 			for(int pos : neighboringGroupsToInvestigate)
 			{
 				var ffr = floodfill(pos);
 				if(ffr.groupLiberties.isEmpty())
 				{
-					ownership[ffr.groupID] = 0;
+					for(int removedStone : ffr.groupStones)
+						board[removedStone] = area;
 
 					libertiesNeedingReview.addAll(ffr.groupStones);
 
@@ -208,21 +215,21 @@ public class iGo
 			 */
 
 			// if we just put a stone there, then it's not a legal move anymore
-			/*legalForBlack[mv] = 0;
+/*			legalForBlack[mv] = 0;
 			legalForWhite[mv] = 0;
 
 			for(int liberty : libertiesNeedingReview)
 			{
 				// first, if this space is open and there are spaces nearby, then this position is legal for both players
-				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> ownership[board[p]] == 0))
+				if(getNeighborsAtPosition(liberty).stream().anyMatch(p -> board[p] < area && ownership[board[p]] == 0))
 				{
 					legalForBlack[liberty] = 1;
 					legalForWhite[liberty] = 1;
 				}
 				else
 					resolveLegalityAtPosition(liberty);
-			}*/
-
+			}
+*/
 			// finally, don't forget to deal with the ko
 
 			if(diagnosticOutput >= 3) {
@@ -250,7 +257,9 @@ public class iGo
 
 	private boolean positionIsLegalForPlayer(int position, int player)
 	{
-		return getNeighborsAtPosition(position).stream().anyMatch(p -> (ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2) || (ownership[board[p]] == -player && floodfill(p).groupLiberties.size() == 1));
+		return getNeighborsAtPosition(position).stream().anyMatch(p ->
+				(board[p] < area && ownership[board[p]] == player && floodfill(p).groupLiberties.size() >= 2) ||
+				(board[p] < area && ownership[board[p]] == -player && floodfill(p).groupLiberties.size() == 1));
 	}
 
 	private class FloodfillResult
@@ -271,11 +280,14 @@ public class iGo
 
 	private FloodfillResult floodfill(int mv)
 	{
-		if(ownership[board[mv]] == 0) {
+		var ffr = new FloodfillResult(mv);
+
+		if(area <= board[mv] || ownership[board[mv]] == 0) {
 			//displayGroupsAndOwnership();
 			System.out.println("Floodfill finds that the current cell has no owner");
+
+			return ffr;
 		}
-		var ffr = new FloodfillResult(mv);
 
 		var toVisit = new Stack<Integer>();
 		toVisit.push(mv);
@@ -286,17 +298,17 @@ public class iGo
 		{
 			var position = toVisit.pop();
 
-			if(ownership[board[position]] == ownership[mv])
+			if(area <= board[position] || ownership[board[position]] == 0)
+			{
+				/* if it borders my group and nobody owns it, then it's a liberty */
+				ffr.groupLiberties.add(position);
+			}
+			else if(ownership[board[position]] == ownership[mv])
 			{
 				/*	if it's part of my group, reassign the groupID to the move position - it's simple, quick, and unique */
 				board[position] = mv;
 				ffr.groupStones.add(position);
 				toVisit.addAll(getNeighborsAtPosition(position).stream().filter(p -> visited[p] == 0).collect(Collectors.toList()));
-			}
-			else if(ownership[board[position]] == 0)
-			{
-				/* if it borders my group and nobody owns it, then it's a liberty */
-				ffr.groupLiberties.add(position);
 			}
 			else
 			{
@@ -316,8 +328,12 @@ public class iGo
 
 	public void displayGroupsAndOwnership()
 	{
-		System.out.println("Group Affiliation");
+		System.out.println("Board State");
 		display(board);
+		System.out.println("Ownership State");
+		display(ownership);
+		System.out.println("Group State");
+		display(new HashSet<>());
 	}
 
 	public void displayFloodfillResult(FloodfillResult ffr)
@@ -347,9 +363,9 @@ public class iGo
 				if(highlightPositions.contains(position))	System.out.print("(");
 				else										System.out.print(" ");
 
-				if(ownership[board[side*r+c]] == 1)			System.out.print("X");
-				if(ownership[board[side*r+c]] == -1)		System.out.print("O");
-				if(ownership[board[side*r+c]] == 0)			System.out.print("-");
+				if(board[side*r+c] < area && ownership[board[side*r+c]] == 1)		System.out.print("X");
+				if(board[side*r+c] < area && ownership[board[side*r+c]] == -1)		System.out.print("O");
+				if(area <= board[side*r+c] || ownership[board[side*r+c]] == 0)		System.out.print("-");
 
 				if(highlightPositions.contains(position))	System.out.print(")");
 				else										System.out.print(" ");
@@ -370,7 +386,7 @@ public class iGo
 				if(position == array[position])				System.out.print("(");
 				else										System.out.print(" ");
 
-				System.out.printf("%1$4s",array[position]*ownership[array[position]]);
+				System.out.printf("%1$4s",array[position]);
 
 				if(position == array[position])				System.out.print(")");
 				else										System.out.print(" ");
