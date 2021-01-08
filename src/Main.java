@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 public class Main
 {
@@ -50,7 +51,83 @@ afterward:
 
 	public static void main(String[] args)
 	{
-		simulationSpeedTest("res\\compliant kgs games",19);
+/*
+		var test = new iGo(5, 3);
+		test.placeStone(new Move(0, 0, 5).index, 1);
+		test.placeStone(new Move(1, 0, 5).index, 1);
+		test.placeStone(new Move(2, 0, 5).index, -1);
+		test.placeStone(new Move(2, 1, 5).index, -1);
+		test.placeStone(new Move(2, 2, 5).index, -1);
+		test.placeStone(new Move(1, 2, 5).index, -1);
+		test.placeStone(new Move(0, 2, 5).index, -1);
+		test.placeStone(new Move(0, 1, 5).index, -1);
+*/
+
+		//simulationSpeedTest("res\\compliant kgs games",19);
+
+		randomSamplerTest(100000, 9);
+	}
+
+	private static void randomSamplerTest(int gamesToPlay, int edgeLength)
+	{
+		System.out.println("Starting Random Games Test");
+
+		int errors = 0;
+		int gamesPlayed = 0;
+		int movesPlayed = 0;
+		int gamesWithErrors = 0;
+		long startTime = System.nanoTime();
+		while(gamesPlayed < gamesToPlay)
+		{
+			int player = 1;
+			var game = new iGo(edgeLength);
+			boolean gameContainsErrors = false;
+
+			var random = new Random();
+			boolean gameInProgress = true;
+			while(gameInProgress)
+			{
+				//var legalMoves = game.getMovesLegalForBothPlayers();
+				var legalMoves = game.getMovesLegalForPlayer(player);
+				if(legalMoves.isEmpty())
+					gameInProgress = false;
+				else
+				{
+					movesPlayed ++;
+					var mv = legalMoves.get(random.nextInt(legalMoves.size()));
+					var success = game.placeStone(mv, player);
+					if(!success)
+					{
+						errors ++;
+						gameContainsErrors = true;
+					}
+					player = -player;
+				}
+			}
+
+			/*var zombies = game.boardContainsZombieGroups();
+			if(!zombies.isEmpty()) {
+				game.display(zombies);
+				System.out.println("Zombie Stones Found");
+			}*/
+
+			//game.display(new HashSet<>());
+			//game.displayLiberties(new HashSet<>());
+
+			if(gameContainsErrors)
+			{
+				gamesWithErrors ++;
+			}
+
+			gamesPlayed ++;
+			if(gamesPlayed % 100 == 0)
+			{
+				var elapsedTime = System.nanoTime() - startTime;
+				var timePerGame = elapsedTime / gamesPlayed;
+				var timePerMove = elapsedTime / movesPlayed;
+				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")");
+			}
+		}
 	}
 
 	private static void simulationSpeedTest(String sgfFileLocation, int edgeLength)
