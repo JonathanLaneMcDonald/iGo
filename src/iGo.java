@@ -49,6 +49,11 @@ public class iGo
 
 	static ArrayList<ArrayList<Integer>> neighbors;
 
+	public iGo(int side)
+	{
+		this(side, 0);
+	}
+
 	public iGo(int side, int diagnosticLevel)
 	{
 		this.side = side;
@@ -68,9 +73,66 @@ public class iGo
 		setupNeighbors();
 	}
 
-	public iGo(int side)
+	public iGo(iGo other)
 	{
-		this(side, 0);
+		side = other.getSide();
+		area = other.getArea();
+		ko = other.getKo();
+
+		board = other.getBoard();
+		ownership = other.getOwnership();
+		liberties = other.getLiberties();
+		legalForBlack = other.getLegalForBlack();
+		legalForWhite = other.getLegalForWhite();
+
+		diagnosticOutput = other.getDiagnosticOutput();
+
+		// the neighbor status is static, so it should be shared arleady
+	}
+
+	public int getSide()
+	{
+		return side;
+	}
+
+	public int getArea()
+	{
+		return area;
+	}
+
+	public Ko getKo()
+	{
+		return new Ko(ko.koPosition, ko.restrictedPlayer);
+	}
+
+	public int[] getBoard()
+	{
+		return board.clone();
+	}
+
+	public int[] getOwnership()
+	{
+		return ownership.clone();
+	}
+
+	public int[] getLiberties()
+	{
+		return liberties.clone();
+	}
+
+	public int[] getLegalForBlack()
+	{
+		return legalForBlack.clone();
+	}
+
+	public int[] getLegalForWhite()
+	{
+		return legalForWhite.clone();
+	}
+
+	public int getDiagnosticOutput()
+	{
+		return diagnosticOutput;
 	}
 
 	private void setupLegalMoves()
