@@ -84,16 +84,18 @@ afterward:
 			boolean gameContainsErrors = false;
 
 			var random = new Random();
-			boolean gameInProgress = true;
-			while(gameInProgress)
+			int consecutivePasses = 0;
+			while(consecutivePasses < 2)
 			{
 				//var legalMoves = game.getMovesLegalForBothPlayers();
 				var sensibleMoves = game.getSensibleMovesForPlayer(player);
 				if(sensibleMoves.isEmpty())
-					gameInProgress = false;
+					consecutivePasses ++;
 				else
 				{
 					movesPlayed ++;
+					consecutivePasses = 0;
+
 					var mv = sensibleMoves.get(random.nextInt(sensibleMoves.size()));
 					var success = game.placeStone(mv, player);
 					if(!success)
