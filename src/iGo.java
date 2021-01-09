@@ -37,6 +37,7 @@ public class iGo
 
 	int side;
 	int area;
+	double komi;
 	Ko ko;
 
 	int[] board;
@@ -58,6 +59,7 @@ public class iGo
 	{
 		this.side = side;
 		area = side*side;
+		komi = 7.5;
 		ko = new Ko(-1, -1);
 
 		board = new int[area];
@@ -77,6 +79,7 @@ public class iGo
 	{
 		side = other.getSide();
 		area = other.getArea();
+		komi = other.getKomi();
 		ko = other.getKo();
 
 		board = other.getBoard();
@@ -98,6 +101,11 @@ public class iGo
 	public int getArea()
 	{
 		return area;
+	}
+
+	public double getKomi()
+	{
+		return komi;
 	}
 
 	public Ko getKo()
