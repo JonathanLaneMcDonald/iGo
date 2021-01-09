@@ -571,10 +571,10 @@ public class iGo
 
 	public void display(int[] array)
 	{
-		display(array, side);
+		display(array, side, new HashSet<>());
 	}
 
-	public static void display(int[] array, int sidelength)
+	public static void display(int[] array, int sidelength, Set<Integer> highlightPositions)
 	{
 		for(int r = 0; r < sidelength; r++)
 		{
@@ -582,12 +582,12 @@ public class iGo
 			{
 				var position = sidelength*r+c;
 
-				if(position == array[position])				System.out.print("(");
+				if(highlightPositions.contains(position))	System.out.print("(");
 				else										System.out.print(" ");
 
-				System.out.printf("%1$4s",array[position]);
+				System.out.printf("%1$5s",array[position]);
 
-				if(position == array[position])				System.out.print(")");
+				if(highlightPositions.contains(position))	System.out.print(")");
 				else										System.out.print(" ");
 			}
 			System.out.print("\n");

@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MonteCarloTreeSearch {
 	private class Tuple<K, V>
@@ -36,9 +37,8 @@ public class MonteCarloTreeSearch {
 			this.player = player;
 			this.sensibility = sensibility;
 
-			// these initial values are mainly there as normalizers and to avoid divide by zero
-			totalVictories = 1;
-			totalSimulations = 1;
+			totalVictories = 0;
+			totalSimulations = 0;
 
 			this.parent = parent;
 			children = null;
@@ -114,11 +114,44 @@ public class MonteCarloTreeSearch {
 		if(currentRoot.children != null) {
 			var strength = new int[area];
 			for (var child : currentRoot.children)
-				strength[child.move] = (int)(100*child.totalVictories / (double) child.totalSimulations);
-			iGo.display(strength, side);
+				strength[child.move] = child.totalSimulations;
+			System.out.println("Total Simulations");
+			iGo.display(strength, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+			System.out.println("Policy Values");
+			iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
+			System.out.println("Utility Values");
+			iGo.display(getValue(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
 		}
 		else
 			System.out.println("Simulations have not been performed at this node");
+	}
+
+	public int[] getPolicy(int base)
+	{
+		var policy = new int[area];
+
+		if(currentRoot.children != null) {
+			double totalSimulations = 0;
+			for(var child : currentRoot.children)
+				totalSimulations += child.totalSimulations;
+
+			for(var child : currentRoot.children)
+				policy[child.move] = (int)(base * child.totalSimulations / totalSimulations);
+		}
+
+		return policy;
+	}
+
+	public int[] getValue(int base)
+	{
+		var value = new int[area];
+
+		if(currentRoot.children != null) {
+			for(var child : currentRoot.children)
+				value[child.move] = (int)(base * child.totalVictories / (1+child.totalSimulations));
+		}
+
+		return value;
 	}
 
 	public void simulate(int numberOfSimulations, double probabilityOfExpansion)
@@ -206,11 +239,11 @@ public class MonteCarloTreeSearch {
 				totalSimulations += child.totalSimulations;
 
 		int bestMove = -1;
-		double bestScore = 0;
+		double bestScore = -1;
 		for(var child : currentNode.children)
 		{
 			if(child.sensibility == 1) {
-				double score = (double) child.totalVictories / child.totalSimulations + c * Math.pow(Math.log(totalSimulations) / child.totalSimulations, 0.5);
+				double score = (double) child.totalVictories / (1+child.totalSimulations) + c * Math.pow(Math.log(totalSimulations) / (1+child.totalSimulations), 0.5);
 				if (bestScore < score) {
 					bestScore = score;
 					bestMove = child.move;
