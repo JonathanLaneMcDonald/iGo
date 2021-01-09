@@ -361,6 +361,14 @@ public class iGo
 		return getSensibleMovesForPlayer(-1);
 	}
 
+	public int[] getSensibleMovesForPlayerAsArray(int player)
+	{
+		var sensibleMoves = new int[area];
+		for(var mv : getSensibleMovesForPlayer(player))
+			sensibleMoves[mv] = 1;
+		return sensibleMoves;
+	}
+
 	public List<Integer> getSensibleMovesForPlayer(int player)
 	{
 		// i define "sensible" as 1) legal for me && 2) legal for opponent or suicide for opponent
