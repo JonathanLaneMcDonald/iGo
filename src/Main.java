@@ -51,21 +51,15 @@ afterward:
 
 	public static void main(String[] args)
 	{
-/*
-		var test = new iGo(5, 3);
-		test.placeStone(new Move(0, 0, 5).index, 1);
-		test.placeStone(new Move(1, 0, 5).index, 1);
-		test.placeStone(new Move(2, 0, 5).index, -1);
-		test.placeStone(new Move(2, 1, 5).index, -1);
-		test.placeStone(new Move(2, 2, 5).index, -1);
-		test.placeStone(new Move(1, 2, 5).index, -1);
-		test.placeStone(new Move(0, 2, 5).index, -1);
-		test.placeStone(new Move(0, 1, 5).index, -1);
-*/
-
 		//simulationSpeedTest("res\\compliant kgs games",19);
 
-		randomSamplerTest(100000, 9);
+		//randomSamplerTest(100000, 9);
+
+		var policy = new MonteCarloTreeSearch(9);
+		policy.displayBoard();
+		policy.displayPositionStrength();
+		policy.simulate(1000000, 0.1);
+		policy.displayPositionStrength();
 	}
 
 	private static void randomSamplerTest(int gamesToPlay, int edgeLength)

@@ -571,11 +571,16 @@ public class iGo
 
 	public void display(int[] array)
 	{
-		for(int r = 0; r < side; r++)
+		display(array, side);
+	}
+
+	public static void display(int[] array, int sidelength)
+	{
+		for(int r = 0; r < sidelength; r++)
 		{
-			for(int c = 0; c < side; c++)
+			for(int c = 0; c < sidelength; c++)
 			{
-				var position = side*r+c;
+				var position = sidelength*r+c;
 
 				if(position == array[position])				System.out.print("(");
 				else										System.out.print(" ");
