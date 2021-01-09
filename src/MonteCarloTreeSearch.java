@@ -272,7 +272,8 @@ public class MonteCarloTreeSearch {
 	{
 		int player = nextToPlay;
 		int consecutivePasses = 0;
-		while(consecutivePasses < 2)
+		int movesPlayed = 0;
+		while(consecutivePasses < 2 && movesPlayed < game.getArea()*3)
 		{
 			var sensibleMoves = game.getSensibleMovesForPlayer(player);
 			if(sensibleMoves.isEmpty())
@@ -284,6 +285,7 @@ public class MonteCarloTreeSearch {
 				game.placeStone(mv, player);
 				player = -player;
 			}
+			movesPlayed ++;
 		}
 
 		if(game.getSimpleTerminalScore() > 0)
