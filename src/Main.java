@@ -55,6 +55,9 @@ afterward:
 
 		//randomSamplerTest(100000, 9);
 
+		// try randomizing komi with maybe a weighted random sampler across the top 3 to instigate variable playouts
+		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
+		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		mctsSelfPlayTest();
 	}
 
