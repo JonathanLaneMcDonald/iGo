@@ -469,6 +469,23 @@ public class iGo
 		return ffr;
 	}
 
+	public double getSimpleTerminalScore()
+	{
+		/* getting the simple terminal score means you've satisfied the following conditions:
+			1) you've sampled "sensible" moves, meaning you'll do every move except filling your own eyes, and
+			2) you've played until there have been two consecutive passes, meaning...
+			The two players have exhausted all moves, all groups are connected, and there are no shared liberties, so
+			It should be possible to count the score by checking a very simple condition, as follows
+		 */
+		double score = 0;
+		for(int position = 0; position < area; position++)
+			if((board[position] < area && ownership[board[position]] == 1) || legalForBlack[position] == 1)
+				score += 1;
+			else
+				score -= 1;
+		return score + komi;
+	}
+
 	public void displayGroupsAndOwnership()
 	{
 		System.out.println("Board State");

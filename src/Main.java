@@ -107,6 +107,7 @@ afterward:
 				}
 			}
 
+			//System.out.println(game.getSimpleTerminalScore());
 			//game.display(new HashSet<>());
 			//game.displayLiberties(new HashSet<>());
 
@@ -116,7 +117,7 @@ afterward:
 			}
 
 			gamesPlayed ++;
-			if(gamesPlayed % 100 == 0)
+			if(gamesPlayed % 1000 == 0)
 			{
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / gamesPlayed;
