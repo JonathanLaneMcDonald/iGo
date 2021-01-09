@@ -88,13 +88,13 @@ afterward:
 			while(gameInProgress)
 			{
 				//var legalMoves = game.getMovesLegalForBothPlayers();
-				var legalMoves = game.getMovesLegalForPlayer(player);
-				if(legalMoves.isEmpty())
+				var sensibleMoves = game.getSensibleMovesForPlayer(player);
+				if(sensibleMoves.isEmpty())
 					gameInProgress = false;
 				else
 				{
 					movesPlayed ++;
-					var mv = legalMoves.get(random.nextInt(legalMoves.size()));
+					var mv = sensibleMoves.get(random.nextInt(sensibleMoves.size()));
 					var success = game.placeStone(mv, player);
 					if(!success)
 					{
@@ -104,12 +104,6 @@ afterward:
 					player = -player;
 				}
 			}
-
-			/*var zombies = game.boardContainsZombieGroups();
-			if(!zombies.isEmpty()) {
-				game.display(zombies);
-				System.out.println("Zombie Stones Found");
-			}*/
 
 			//game.display(new HashSet<>());
 			//game.displayLiberties(new HashSet<>());

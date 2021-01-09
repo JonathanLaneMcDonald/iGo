@@ -343,6 +343,43 @@ public class iGo
 		return legalForPlayer;
 	}
 
+	public List<Integer> getSensibleMovesForBlack()
+	{
+		return getSensibleMovesForPlayer(1);
+	}
+
+	public List<Integer> getSensibleMovesForWhite()
+	{
+		return getSensibleMovesForPlayer(-1);
+	}
+
+	public List<Integer> getSensibleMovesForPlayer(int player)
+	{
+		// i define "sensible" as 1) legal for me && 2) legal for opponent or suicide for opponent
+		var sensibleForPlayer = new ArrayList<Integer>();
+		for(int position = 0; position < area; position ++) {
+			if (player == 1) {
+				if (legalForBlack[position] == 1 && (legalForWhite[position] == 1 || moveIsSuicideForPlayer(position, -1))) {
+					sensibleForPlayer.add(position);
+				}
+			}
+			else if(player == -1) {
+				if(legalForWhite[position] == 1 && (legalForBlack[position] == 1 || moveIsSuicideForPlayer(position, 1))){
+					sensibleForPlayer.add(position);
+				}
+			}
+		}
+		return sensibleForPlayer;
+	}
+
+	private boolean moveIsSuicideForPlayer(int position, int player)
+	{
+		// if i have groups neighboring tihs position and none of them has more than one liberty
+		var myNeighboringStones = getNeighborsAtPosition(position).stream().filter(p -> board[p] < area && ownership[board[p]] == player).collect(Collectors.toList());
+		var myNeighboringGroups = myNeighboringStones.stream().map(p -> board[p]).filter(g -> 1 < liberties[g]).collect(Collectors.toSet());
+		return !myNeighboringStones.isEmpty() && myNeighboringGroups.isEmpty();
+	}
+
 	private boolean positionIsAvailableToBothPlayers(int position)
 	{
 		return legalForBlack[position] == 1 && legalForWhite[position] == 1;
