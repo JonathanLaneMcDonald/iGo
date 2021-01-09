@@ -86,10 +86,11 @@ public class MonteCarloTreeSearch {
 			int mostSimulations = 0;
 			for(var child : currentRoot.children)
 			{
-				if(mostSimulations < child.totalSimulations)
-				{
-					mostSimulations = child.totalSimulations;
-					mostSimulatedMove = child.move;
+				if(child.sensibility == 1) {
+					if (mostSimulations < child.totalSimulations) {
+						mostSimulations = child.totalSimulations;
+						mostSimulatedMove = child.move;
+					}
 				}
 			}
 		}
@@ -125,7 +126,7 @@ public class MonteCarloTreeSearch {
 		for(int i = 0; i < numberOfSimulations; i++) {
 			simulate(probabilityOfExpansion);
 			if(i != 0 && i % 1000 == 0) {
-				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded");
+				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+getStrongestMove()+" is the strongest move");
 				if(i % 10000 == 0)
 					displayPositionStrength();
 			}

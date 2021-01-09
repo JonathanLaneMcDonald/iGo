@@ -55,11 +55,28 @@ afterward:
 
 		//randomSamplerTest(100000, 9);
 
+		mctsSelfPlayTest();
+	}
+
+	public static void mctsSelfPlayTest()
+	{
 		var policy = new MonteCarloTreeSearch(9);
 		policy.displayBoard();
-		policy.displayPositionStrength();
-		policy.simulate(1000000, 0.1);
-		policy.displayPositionStrength();
+
+		int consecutivePasses = 0;
+		while(consecutivePasses < 2) {
+			policy.simulate(10000, 0.1);
+			policy.displayPositionStrength();
+			var strongestMove = policy.getStrongestMove();
+			System.out.println(strongestMove + "  " + consecutivePasses);
+			if(strongestMove == -1)
+				consecutivePasses ++;
+			else {
+				consecutivePasses = 0;
+				policy.doMove(strongestMove);
+				policy.displayBoard();
+			}
+		}
 	}
 
 	private static void randomSamplerTest(int gamesToPlay, int edgeLength)
