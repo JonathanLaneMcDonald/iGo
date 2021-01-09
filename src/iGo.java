@@ -59,7 +59,7 @@ public class iGo
 	{
 		this.side = side;
 		area = side*side;
-		komi = 7.5;
+		komi = 6.5;
 		ko = new Ko(-1, -1);
 
 		board = new int[area];
@@ -491,7 +491,7 @@ public class iGo
 				score += 1;
 			else
 				score -= 1;
-		return score + komi;
+		return score - komi;
 	}
 
 	public void displayGroupsAndOwnership()
