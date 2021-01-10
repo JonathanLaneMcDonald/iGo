@@ -1,0 +1,69 @@
+
+Issue:
+	There may be a problem with how the "game from lineage" function is working. it looks like sometimes i don't get the same game for black and white
+	Maybe make a function that records the previous state for comparison and shows me the diff and I can sit there and manually verify..? 
+	This may be a case where I should sit down and just design tests for all this stuff...
+
+Task:
+	Add "pass" to the list of possible moves in both the tree search and the model (can make it equal to the area of the board or something)
+		Note: "pass" is the only move that's always legal ;)
+
+Task:
+	be able to export training data
+		write functions for actually automating gameplay and exporting the results to a file
+
+Task:
+	consider adding a reference to the Node class to hold an iGo
+		this will enable caching of intermediate states of the game and should significantly speed up the tree search in later stages
+		it should also give me a convenient avenue to test both the copy constructor for iGo and the lineageToMoveset function in the mcts class
+
+Task:
+	One of my favorite features of KataGo -- variable board sizes
+	Definitely leverage this in self-play games. I've already made a spreadsheet outlining a rough training schedule.
+	
+	Training Schedule
+
+		Step 1: 
+			At this stage, we have a randomly initialized model, so there's really no point in using a model at all. The authors of the KataGo paper showed in their ablation study that games played with only 100 steps of lookahead were still good for training. This seems to be because the value head of the network is data-hungry and that the value head drives policy selection to a large degree early in the training process. The way we develop an understanding of value is to ground it in the final score of the game and this slowly "percolates" up the tree search as the value head sees more and more training data. 
+			
+			So I'll do the following:
+				1) select a board size from {7,8,9} using a weighted random sample
+					these boards are small enough to be fast to simulate, but large enough to be dynamic
+
+				2) play with a random number of rollouts sampled from 2^{normal(mu=6, sigma=2)}
+					i feel like having a random number of rollouts basically makes the policy smarter or dumber
+					this will hopefully lead to more variability in gameplay and the model will be able to learn to resolve a larger variety of states
+				
+				3) i think i'll generate 100,000 state-action pairs, then i'll train a model (32x4)
+					i'm currently generating about 8 moves/second across that set of {7,8,9}, so i'm happy to wait for 100,000 of those
+				
+				4) once i'm training with a model, i'll retrain after every new batch of 100,000 moves.
+					i'll have a window of maybe a million moves (maybe 10M?)
+					models are expensive, so i'll pad my data by generating symmetries. this way, i'll only have to generate 12,500 samples per training/retraining cycle
+					i'll save one model checkpoint per training cycle
+					i'll have the latest checkpoint face off against the strongest model in a simple-majority wins competition for strongest model
+
+			Training Data Format?
+				int(edge) + '\t' + ';'.join([moveToSGF(mv) + '|' + int(policy) + '|' + %f5(value) for mv, policy, value in moveset])
+				this way, we're kind of explicit about the fact that the policy and value correspond to this state -- the value of this state is x and the thing we do next is y
+				i just need to write a function that kind of does the same thing that lineageToMoveset does except maybe call it lineageToDataset and include the value at each node as well
+
+				or
+				
+				i could output the following and it'd be much simpler...
+					boardState + '\t' + int(policy) + '\t' + %f5(value) '\n'
+					each game would start with all zeros, the policy == whatever the next move was, and value == 0.5 because we just assume the komi was set fairly
+					don't even worry about compressing the board state for now, even though you'll probably need to eventually...
+				
+				there are also a few training objectives to consider...
+				1) vanilla -- policy, value
+				2) territory -- policy, value, tromp-taylor outcome
+				3) fancy -- policy, value for this step and the next 5 steps probably by applying a really short-sequence lstm or something
+
+			a little disorganized...
+			
+			Anyway, i need to:
+				1) add "pass" as a valid option that's always legal (in mcts and in the iGo class where i'll just add "area" to the -1 condition to see if it's a pass)
+				2) add functionality that, once the game is concluded, conditional on whether it concludes because it exceeded movecount or if it concluded "honestly", we call lineageToDataset and then we write the dataset for the game to file and start another game -- i can develop a model in python just to test how well it does with these data predicting policy and value
+
+
