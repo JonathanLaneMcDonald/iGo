@@ -53,14 +53,11 @@ afterward:
 	{
 		//simulationSpeedTest("res\\compliant kgs games",19);
 
-		//randomSamplerTest(100000, 9);
-
-		// try randomizing komi with maybe a weighted random sampler across the top 3 to instigate variable playouts
 		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
-		// mctsSelfPlayTest(7, 100, 1);
+		mctsSelfPlayTest(7, 100, 1);
 
-		datasetGeneratorTest(7);
+		//datasetGeneratorTest(7);
 	}
 
 	public static void datasetGeneratorTest(int boardSize)
@@ -75,88 +72,30 @@ afterward:
 	public static int mctsSelfPlayTest(int boardSide, int rollouts, double expansionProbability)
 	{
 		var policy = new MonteCarloTreeSearch(boardSide);
-		//policy.displayBoard();
+		policy.displayBoard();
 
 		int consecutivePasses = 0;
 		int moveNumber = 0;
 		while(consecutivePasses < 2 && moveNumber < policy.area*3) {
 
 			moveNumber ++;
-			//System.out.println("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play");
+			System.out.println("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play");
 
 			policy.simulate(rollouts, expansionProbability);
 
-			//policy.displayPositionStrength();
+			policy.displayPositionStrength();
 			var strongestMove = policy.getStrongestMove();
-			//System.out.println(strongestMove + "  " + consecutivePasses);
-			if(strongestMove == -1)
-				consecutivePasses ++;
+			System.out.println(strongestMove + "  " + consecutivePasses);
+			if(strongestMove == -1) {
+				consecutivePasses++;
+			}
 			else {
 				consecutivePasses = 0;
 				policy.doMove(strongestMove);
-				//policy.displayBoard();
+				policy.displayBoard();
 			}
 		}
 		return moveNumber;
-	}
-
-	private static void randomSamplerTest(int gamesToPlay, int edgeLength)
-	{
-		System.out.println("Starting Random Games Test");
-
-		int errors = 0;
-		int gamesPlayed = 0;
-		int movesPlayed = 0;
-		int gamesWithErrors = 0;
-		long startTime = System.nanoTime();
-		while(gamesPlayed < gamesToPlay)
-		{
-			int player = 1;
-			var game = new iGo(edgeLength);
-			boolean gameContainsErrors = false;
-
-			var random = new Random();
-			int consecutivePasses = 0;
-			while(consecutivePasses < 2)
-			{
-				//var legalMoves = game.getMovesLegalForBothPlayers();
-				var sensibleMoves = game.getSensibleMovesForPlayer(player);
-				if(sensibleMoves.isEmpty())
-					consecutivePasses ++;
-				else
-				{
-					movesPlayed ++;
-					consecutivePasses = 0;
-
-					var mv = sensibleMoves.get(random.nextInt(sensibleMoves.size()));
-					var success = game.placeStone(mv, player);
-					if(!success)
-					{
-						errors ++;
-						gameContainsErrors = true;
-					}
-					player = -player;
-				}
-			}
-
-			//System.out.println(game.getSimpleTerminalScore());
-			//game.display(new HashSet<>());
-			//game.displayLiberties(new HashSet<>());
-
-			if(gameContainsErrors)
-			{
-				gamesWithErrors ++;
-			}
-
-			gamesPlayed ++;
-			if(gamesPlayed % 1000 == 0)
-			{
-				var elapsedTime = System.nanoTime() - startTime;
-				var timePerGame = elapsedTime / gamesPlayed;
-				var timePerMove = elapsedTime / movesPlayed;
-				System.out.println("Moves: "+movesPlayed+" Games: "+gamesPlayed+" ("+movesPlayed/gamesPlayed+"mpg) Time/(m,g): ("+timePerMove+","+timePerGame+") Errors/(m,g): ("+errors+","+gamesWithErrors+")");
-			}
-		}
 	}
 
 	private static void simulationSpeedTest(String sgfFileLocation, int edgeLength)
