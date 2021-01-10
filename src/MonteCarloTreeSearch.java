@@ -77,7 +77,11 @@ public class MonteCarloTreeSearch {
 		currentRoot = root;
 	}
 
-	// put in a weighted random version of this eventually
+	public int getNextPlayerToMove()
+	{
+		return -currentRoot.player;
+	}
+
 	public int getStrongestMove()
 	{
 		int mostSimulatedMove = -1;
@@ -158,9 +162,9 @@ public class MonteCarloTreeSearch {
 	{
 		for(int i = 0; i < numberOfSimulations; i++) {
 			simulate(probabilityOfExpansion);
-			if(i != 0 && i % 1000 == 0) {
+			if(i != 0 && i % 100000 == 0) {
 				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+getStrongestMove()+" is the strongest move");
-				if(i % 10000 == 0)
+				if(i % 1000000 == 0)
 					displayPositionStrength();
 			}
 		}

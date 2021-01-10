@@ -58,28 +58,46 @@ afterward:
 		// try randomizing komi with maybe a weighted random sampler across the top 3 to instigate variable playouts
 		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
-		mctsSelfPlayTest();
+		// mctsSelfPlayTest(7, 100, 1);
+
+		datasetGeneratorTest(7);
 	}
 
-	public static void mctsSelfPlayTest()
+	public static void datasetGeneratorTest(int boardSize)
 	{
-		var policy = new MonteCarloTreeSearch(9);
-		policy.displayBoard();
+		int moves = 0;
+		for(int game = 0; game < 100; game++){
+			moves += mctsSelfPlayTest(boardSize, boardSize*boardSize, 1);
+			System.out.println(game + " games and " + moves + " moves");
+		}
+	}
+
+	public static int mctsSelfPlayTest(int boardSide, int rollouts, double expansionProbability)
+	{
+		var policy = new MonteCarloTreeSearch(boardSide);
+		//policy.displayBoard();
 
 		int consecutivePasses = 0;
-		while(consecutivePasses < 2) {
-			policy.simulate(10000, 0.1);
-			policy.displayPositionStrength();
+		int moveNumber = 0;
+		while(consecutivePasses < 2 && moveNumber < policy.area*3) {
+
+			moveNumber ++;
+			//System.out.println("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play");
+
+			policy.simulate(rollouts, expansionProbability);
+
+			//policy.displayPositionStrength();
 			var strongestMove = policy.getStrongestMove();
-			System.out.println(strongestMove + "  " + consecutivePasses);
+			//System.out.println(strongestMove + "  " + consecutivePasses);
 			if(strongestMove == -1)
 				consecutivePasses ++;
 			else {
 				consecutivePasses = 0;
 				policy.doMove(strongestMove);
-				policy.displayBoard();
+				//policy.displayBoard();
 			}
 		}
+		return moveNumber;
 	}
 
 	private static void randomSamplerTest(int gamesToPlay, int edgeLength)
