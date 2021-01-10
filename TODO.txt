@@ -1,4 +1,19 @@
 
+Todo:
+	1) revert the change with the pass move -- passing is a last resort and should only be done when there are no other options -- so i can manually do it when the options run out
+	2) get mcts games to finish correctly like the actual iGo games -- figure out why that's not happening
+		consider accelerating mcts tree search by storing board states at each node in the actual visited path
+		that'll test the iGo copy constructor and it'll give an easy way of testing the lineageToMoveset function by replaying at each node in the tree and comparing with the cached game state
+	3) add functionality to extract gamestate at each node so that i can actually build a dataset
+	4) build the functionality needed to play tournaments with the specifications outlined below
+		this includes the functionality to write a training-ready dataset to file
+	5) develop a model in python that can train on the exported dataset
+	
+	that should really be enough for today!
+	
+	6) try and figure out how to load keras models in java as this is probably the easiest way to initiate the training feedback loop
+	7) train the current and next architectures in parallel and switch over when the larger one is able to beat the smaller one like 2/3 of the time or something similarly overwhelming
+
 Issue:
 	There may be a problem with how the "game from lineage" function is working. it looks like sometimes i don't get the same game for black and white
 	Maybe make a function that records the previous state for comparison and shows me the diff and I can sit there and manually verify..? 
@@ -51,7 +66,7 @@ Task:
 				or
 				
 				i could output the following and it'd be much simpler...
-					boardState + '\t' + int(policy) + '\t' + %f5(value) '\n'
+					movesInStack + '\t' + boardState + '\t' + int(policy) + '\t' + %f5(value) '\n'
 					each game would start with all zeros, the policy == whatever the next move was, and value == 0.5 because we just assume the komi was set fairly
 					don't even worry about compressing the board state for now, even though you'll probably need to eventually...
 				
@@ -65,5 +80,50 @@ Task:
 			Anyway, i need to:
 				1) add "pass" as a valid option that's always legal (in mcts and in the iGo class where i'll just add "area" to the -1 condition to see if it's a pass)
 				2) add functionality that, once the game is concluded, conditional on whether it concludes because it exceeded movecount or if it concluded "honestly", we call lineageToDataset and then we write the dataset for the game to file and start another game -- i can develop a model in python just to test how well it does with these data predicting policy and value
+
+Task:
+	General Training Outline:
+
+		Initialize Training:
+			Assumptions:
+				I have a root directory to work from, but
+				I have no training data and no trained models
+				I only have the rules of the game and a generic policy augmentation algorithm (mcts)
+			
+			Actions:
+				I create some empty log files like this:
+					1) log file describing the current state of the training data (where a particular file is, when it was created, and what method/model was used to create it)
+					2) log file describing the current state of my "model zoo" (when models were created and what data they've been trained on (saved once per checkpoint))
+					3) log file describing tournaments between models including win/loss rates and when a new models is selected to be the "strongest model"
+				Copy over a training schedule, for example:
+					One training cycle consists of:
+						1) selecting a policy model - if no trained model is available, default to vanilla mcts
+						2) 	if using vanilla mcts, then play through 12,500 games per checkpoint,
+							else if a model is available, play through 1250 games per checkpoint
+						3) 	if using vanilla mcts, then sample games from the distribution {7,8,9} in inverse proportion to board area,
+							else if a model is available, then samples games from the distribution {9,10,11,12,13,14,15,16,17,18,19} in inverse proportion to board size
+
+						encouraging variability in gameplay
+							4) komi is set on a per game basis according to 6.5+int(normal(0,1)), but we play with 6.5 -- this way, we hopefully don't train the model to just eek out a narrow victory
+							5) the number of playouts is sampled from the distribution 2^{normal(mu=7, sigma=1)}
+							6) take a weighted random sample from the top 3 moves for each of the first {boardSize} moves
+
+						training inputs and objectives
+							7) train a model by uniformly sampling the last 100,000 games (before accounting for symmetries)
+							8) training inputs (5 channels currentState(black, white)+previousState(black,white)+playerToMove)
+							9) training objectives (one-hot policy, regression utility, ternary tromp-taylor score (black, white, neutral))						
+						
+						
+				I initiate the training loop
+		
+		Training Loop:
+			1) load a policy (vanilla mcts or model checkpoint)
+			2) play the required number of games under the required conditions, save training samples, update logs
+			3) train the current model (on k training samples) by uniformly sampling the last n games -- always sampling symmetries
+			4) save the model checkpoint and do a tournament against the current strongest policy to see if the new checkpoint should replace it
+			5) update logs
+			6) go to step 1
+
+
 
 
