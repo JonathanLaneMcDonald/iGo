@@ -170,7 +170,7 @@ public class iGo
 
 	public boolean placeStone(int mv, int player)
 	{
-		if(mv == -1)
+		if(mv == -1 || mv == area)
 		{
 			unregisterKo();
 			return true;
