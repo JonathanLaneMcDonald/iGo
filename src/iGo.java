@@ -351,16 +351,6 @@ public class iGo
 		return legalForPlayer;
 	}
 
-	public List<Integer> getSensibleMovesForBlack()
-	{
-		return getSensibleMovesForPlayer(1);
-	}
-
-	public List<Integer> getSensibleMovesForWhite()
-	{
-		return getSensibleMovesForPlayer(-1);
-	}
-
 	public int[] getSensibleMovesForPlayerAsArray(int player)
 	{
 		var sensibleMoves = new int[area];
