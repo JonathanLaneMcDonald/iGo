@@ -1,6 +1,7 @@
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class iGo
 {
@@ -210,7 +211,6 @@ public class iGo
 				board[mv] = mv;
 				ownership[mv] = player;
 				var ffr = floodfill(mv);
-				liberties[ffr.groupID] = ffr.groupLiberties.size();
 
 				libertiesNeedingReview.addAll(ffr.groupLiberties);
 
@@ -252,8 +252,6 @@ public class iGo
 						var adj = floodfill(groupID);
 
 						libertiesNeedingReview.addAll(adj.groupLiberties);
-
-						liberties[groupID] = adj.groupLiberties.size();
 					}
 				}
 				else
@@ -266,8 +264,6 @@ public class iGo
 							display(ffr.groupStones);
 						}
 					}
-
-					liberties[ffr.groupID] = ffr.groupLiberties.size();
 				}
 			}
 
@@ -463,6 +459,9 @@ public class iGo
 
 			visited[position] = 1;
 		}
+
+		// this must be updated here because floodfill changes the groupID
+		liberties[board[mv]] = ffr.groupLiberties.size();
 
 		return ffr;
 	}
