@@ -494,16 +494,56 @@ public class iGo
 		return score - komi;
 	}
 
+	private int[] countLibertiesAtPosition()
+	{
+		var libertiesAtPosition = new int[area];
+		for(int position = 0; position < area; position ++)
+		{
+			if(board[position] == area)
+				libertiesAtPosition[position] = 0;
+			else
+				libertiesAtPosition[position] = liberties[board[position]];
+		}
+		return libertiesAtPosition;
+	}
+
+	private Set<Integer> manuallyVerifyGlobalLiberties()
+	{
+		var discrepantPositions = new HashSet<Integer>();
+		for(int i = 0; i < area; i++)
+		{
+			if(board[i] < area)
+			{
+				var libertiesAtPosition = liberties[board[i]];// record this number ahead of time because floodfill changes the groupID
+				var ffr = floodfill(i);
+				if(ffr.groupLiberties.size() != libertiesAtPosition) {
+					System.out.println("Group "+ffr.groupID+" "+ffr.groupLiberties.size()+"!="+libertiesAtPosition);
+					discrepantPositions.addAll(ffr.groupStones);
+				}
+			}
+		}
+		return discrepantPositions;
+	}
+
 	public void displayGroupsAndOwnership()
 	{
+		var messedUpLibertyCounts = manuallyVerifyGlobalLiberties();
 		System.out.println("Board State");
 		display(board);
 		System.out.println("Ownership State");
 		display(ownership);
+		System.out.println("Liberties State");
+		display(countLibertiesAtPosition());
 		System.out.println("Group State");
 		display(new HashSet<>());
+		System.out.println("Groups With Discrepant Liberty Counts");
+		display(messedUpLibertyCounts);
 		System.out.println("Liberties State");
 		displayLiberties(new HashSet<>());
+
+		if(!messedUpLibertyCounts.isEmpty())
+			System.out.println("A discrepancy with liberties was detected");
+
 	}
 
 	public void displayFloodfillResult(FloodfillResult ffr)
