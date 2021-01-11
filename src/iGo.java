@@ -1,28 +1,8 @@
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class iGo
 {
-	/*
-	Method for submitting moves and handling consequences
-		assumptions:
-			1) we start with an empty board and all moves are legal
-
-		method for move submission and update:
-		1) check if the move is legal (there's a boolean array for that)
-		2) if legal, place the stone on the board, resulting in a group of one or more stones for the current player
-		3) floodfill the new group with the integer index of the current move, logically connecting all stones in the new group
-			during the floodfill process:
-				I) track board positions of stones are in the current group
-				II) track board positions of liberties belonging to the current group
-				III) record a set of group IDs belonging to the other player (in case we're removing a group, we'll have a list of affected groups to follow up)
-		4) record who owns the newly created group and how many liberties it has by making two assignments, one in ownership and one in liberties
-		5) repeat steps 3 and 4 for any adjacent belonging to the other player
-		6) if a group runs out of liberties, then repeat step 3, send the group stones array to a "remove stones" method, and update bordering groups accordingly
-		7) if a group has a single liberty, then visit that liberty to see if it can connect to get more liberties. if not, i think it's a suicide.
-	 */
 
 	private class Ko
 	{

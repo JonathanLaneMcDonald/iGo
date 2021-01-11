@@ -1,9 +1,9 @@
 
 Todo:
-	1) revert the change with the pass move -- passing is a last resort and should only be done when there are no other options -- so i can manually do it when the options run out
-	2) get mcts games to finish correctly like the actual iGo games -- figure out why that's not happening
-		consider accelerating mcts tree search by storing board states at each node in the actual visited path
-		that'll test the iGo copy constructor and it'll give an easy way of testing the lineageToMoveset function by replaying at each node in the tree and comparing with the cached game state
+	1) somehow add a state to the mcts to include passes. i mainly just want to get a node on the board because i will be using that even just to cover the consecutive pass thing
+	2) cache the current board state in a reference in the Node class so we don't have to replay the entire game all the time. that should speed things up.
+
+
 	3) add functionality to extract gamestate at each node so that i can actually build a dataset
 	4) build the functionality needed to play tournaments with the specifications outlined below
 		this includes the functionality to write a training-ready dataset to file
