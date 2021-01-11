@@ -269,8 +269,9 @@ public class iGo
 
 			return true;
 		}
-		else
+		else {
 			return false;
+		}
 	}
 
 	private void registerKo(int koPosition, int restrictedPlayer)

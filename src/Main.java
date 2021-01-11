@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -16,14 +15,14 @@ public class Main
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		mctsSelfPlayTest(7, 100, 1);
 
-		//datasetGeneratorTest(7);
+		//datasetGeneratorTest(7, 100);
 	}
 
-	public static void datasetGeneratorTest(int boardSize)
+	public static void datasetGeneratorTest(int boardSize, int rollouts)
 	{
 		int moves = 0;
 		for(int game = 0; game < 100; game++){
-			moves += mctsSelfPlayTest(boardSize, boardSize*boardSize, 1);
+			moves += mctsSelfPlayTest(boardSize, rollouts, 1);
 			System.out.println(game + " games and " + moves + " moves");
 		}
 	}
@@ -38,14 +37,20 @@ public class Main
 		while(consecutivePasses < 2 && moveNumber < policy.area*3) {
 
 			moveNumber ++;
-			System.out.println("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play");
 
 			policy.simulate(rollouts, expansionProbability);
 
-			policy.displayPositionStrength();
+			//policy.displayPositionStrength();
 			var strongestMove = policy.getStrongestMove();
-			System.out.println(strongestMove + "  " + consecutivePasses);
-			if(strongestMove == -1) {
+
+			//System.out.print("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play; Move: "+strongestMove);
+			//System.out.print("History: ");
+			//var movesetToDate = policy.getMovesetFromLineage();
+			//while(!movesetToDate.isEmpty())
+			//	System.out.print(movesetToDate.pop()+" ");
+			//System.out.print("\n");
+
+			if(strongestMove == policy.area) {
 				consecutivePasses++;
 			}
 			else {

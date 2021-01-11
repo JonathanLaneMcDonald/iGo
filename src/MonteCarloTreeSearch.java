@@ -58,6 +58,7 @@ public class MonteCarloTreeSearch {
 	Node root;
 	Node currentRoot;
 	int nodesExpanded;
+	int simulationErrors;
 
 	Random random;
 
@@ -72,6 +73,7 @@ public class MonteCarloTreeSearch {
 		random = new Random();
 
 		nodesExpanded = 0;
+		simulationErrors = 0;
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
 		root = new Node(null, -1, -1, -1);
@@ -164,12 +166,15 @@ public class MonteCarloTreeSearch {
 	{
 		for(int i = 0; i < numberOfSimulations; i++) {
 			simulate(probabilityOfExpansion);
-			if(i != 0 && i % 100000 == 0) {
-				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+getStrongestMove()+" is the strongest move");
-				if(i % 1000000 == 0)
-					displayPositionStrength();
+			if(i != 0 && i % 10000 == 0) {
+				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getStrongestMove()+" is the strongest move");
+				if(i % 100000 == 0) {
+					displayBoard();
+					//displayPositionStrength();
+				}
 			}
 		}
+		System.out.println(nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getStrongestMove()+" is the strongest move");
 	}
 
 	private void simulate(double probabilityOfExpansion)
@@ -200,8 +205,11 @@ public class MonteCarloTreeSearch {
 	private iGo prepareGameAtNode(Node currentNode)
 	{
 		var game = new iGo(side);
-		for(var move : lineageToMoveset(currentNode))
-			game.placeStone(move.first, move.second);
+		for(var move : lineageToMoveset(currentNode)) {
+			if (!game.placeStone(move.first, move.second)) {
+				simulationErrors ++;
+			}
+		}
 		return game;
 	}
 
@@ -263,6 +271,11 @@ public class MonteCarloTreeSearch {
 		assert bestMove != -1;
 
 		return Optional.of(currentNode.children[bestMove]);
+	}
+
+	public Stack<Integer> getMovesetFromLineage()
+	{
+		return lineageToMoveset(currentRoot).stream().map(p -> p.first).collect(Collectors.toCollection(Stack::new));
 	}
 
 	private Stack<Tuple<Integer, Integer>> lineageToMoveset(Node walker)
