@@ -1,7 +1,8 @@
 
 Todo:
-	1) somehow add a state to the mcts to include passes. i mainly just want to get a node on the board because i will be using that even just to cover the consecutive pass thing
 	2) cache the current board state in a reference in the Node class so we don't have to replay the entire game all the time. that should speed things up.
+	3) bug: it seems like the two players are ending up playing different games, too, sometimes toward the end...
+		slight refinement to that bug... the tree search is sometimes recommending illegal moves!
 
 
 	3) add functionality to extract gamestate at each node so that i can actually build a dataset
