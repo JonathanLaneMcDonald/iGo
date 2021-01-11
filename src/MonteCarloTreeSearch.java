@@ -49,8 +49,7 @@ public class MonteCarloTreeSearch {
 
 	int side;
 	int area;
-
-	iGo canonicalGame;
+	int actionSpace;
 
 	Node root;
 	Node currentRoot;
@@ -64,8 +63,7 @@ public class MonteCarloTreeSearch {
 
 		this.side = side;
 		area = side*side;
-
-		canonicalGame = new iGo(side);
+		actionSpace = area+1;
 
 		random = new Random();
 
@@ -116,7 +114,7 @@ public class MonteCarloTreeSearch {
 	public void displayPositionStrength()
 	{
 		if(currentRoot.children != null) {
-			var strength = new int[area];
+			var strength = new int[actionSpace];
 			for (var child : currentRoot.children)
 				strength[child.move] = child.totalSimulations;
 			System.out.println("Total Simulations");
@@ -132,7 +130,7 @@ public class MonteCarloTreeSearch {
 
 	public int[] getPolicy(int base)
 	{
-		var policy = new int[area];
+		var policy = new int[actionSpace];
 
 		if(currentRoot.children != null) {
 			double totalSimulations = 0;
@@ -148,7 +146,7 @@ public class MonteCarloTreeSearch {
 
 	public int[] getValue(int base)
 	{
-		var value = new int[area];
+		var value = new int[actionSpace];
 
 		if(currentRoot.children != null) {
 			for(var child : currentRoot.children)
@@ -221,13 +219,16 @@ public class MonteCarloTreeSearch {
 
 	private void expandAllForNode(Node leaf)
 	{
-		leaf.children = new Node[area];
+		leaf.children = new Node[actionSpace];
 
 		var game = prepareGameAtNode(leaf);
 
 		var sensibilityOfMoves = game.getSensibleMovesForPlayerAsArray(-leaf.player);
 		for(int move = 0; move < area; move++)
 			leaf.children[move] = new Node(leaf, move, -leaf.player, sensibilityOfMoves[move]);
+
+		// and, finally, add the "pass" move which is always legal
+		leaf.children[area] = new Node(leaf, area, -leaf.player, 1);
 
 		nodesExpanded ++;
 	}
@@ -255,10 +256,9 @@ public class MonteCarloTreeSearch {
 			}
 		}
 
-		if(bestMove != -1)
-			return Optional.of(currentNode.children[bestMove]);
-		else
-			return Optional.empty();
+		assert bestMove != -1;
+
+		return Optional.of(currentNode.children[bestMove]);
 	}
 
 	private Stack<Tuple<Integer, Integer>> lineageToMoveset(Node walker)
