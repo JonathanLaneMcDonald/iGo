@@ -31,6 +31,8 @@ public class MonteCarloTreeSearch {
 		public Node parent;
 		public Node[] children;
 
+		iGo cachedGame;
+
 		public Node(Node parent, int move, int player, int sensibility)
 		{
 			this.move = move;
@@ -42,6 +44,8 @@ public class MonteCarloTreeSearch {
 
 			this.parent = parent;
 			children = null;
+
+			cachedGame = null;
 		}
 	}
 
