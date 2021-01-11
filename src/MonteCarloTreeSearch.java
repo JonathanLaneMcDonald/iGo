@@ -280,17 +280,22 @@ public class MonteCarloTreeSearch {
 		while(consecutivePasses < 2 && movesPlayed < game.getArea()*3)
 		{
 			var sensibleMoves = game.getSensibleMovesForPlayer(player);
-			if(sensibleMoves.isEmpty())
-				consecutivePasses ++;
-			else
-			{
-				consecutivePasses = 0;
-				var mv = sensibleMoves.get(random.nextInt(sensibleMoves.size()));
-				game.placeStone(mv, player);
-				player = -player;
+			if(sensibleMoves.isEmpty()) {
+				consecutivePasses++;
+				game.placeStone(-1, player);
 			}
+			else {
+				consecutivePasses = 0;
+				game.placeStone(sensibleMoves.get(random.nextInt(sensibleMoves.size())), player);
+			}
+			player = -player;
 			movesPlayed ++;
 		}
+
+		// i don't want to incentivise these long, indecisive games, so if the game goes long, nobody wins
+		// i'm basing this on the fact that games that go until neither player has any more sensible moves usually last ~area*1.2 on average
+		if(movesPlayed > game.getArea()*2)
+			return 0;
 
 		if(game.getSimpleTerminalScore() > 0)
 			return 1;
