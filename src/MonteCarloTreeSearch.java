@@ -23,27 +23,25 @@ public class MonteCarloTreeSearch {
 
 		public int move;
 		public int player;
-		public int sensibility;
 
 		public int totalVictories;
 		public int totalSimulations;
 
 		public Node parent;
-		public Node[] children;
+		public ArrayList<Node> children;
 
 		iGo cachedGame;
 
-		public Node(Node parent, int move, int player, int sensibility)
+		public Node(Node parent, int move, int player)
 		{
 			this.move = move;
 			this.player = player;
-			this.sensibility = sensibility;
 
 			totalVictories = 0;
 			totalSimulations = 0;
 
 			this.parent = parent;
-			children = null;
+			children = new ArrayList<>();
 
 			cachedGame = null;
 		}
@@ -76,7 +74,7 @@ public class MonteCarloTreeSearch {
 		simulationErrors = 0;
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
-		root = new Node(null, -1, -1, -1);
+		root = new Node(null, -1, -1);
 		expandAllForNode(root);
 		currentRoot = root;
 	}
@@ -88,27 +86,26 @@ public class MonteCarloTreeSearch {
 
 	public int getStrongestMove()
 	{
+		int mostSimulations = -1;
 		int mostSimulatedMove = -1;
-		if(currentRoot.children != null)
-		{
-			int mostSimulations = 0;
-			for(var child : currentRoot.children)
-			{
-				if(child.sensibility == 1) {
-					if (mostSimulations < child.totalSimulations) {
-						mostSimulations = child.totalSimulations;
-						mostSimulatedMove = child.move;
-					}
-				}
+		for(var child : currentRoot.children) {
+			if (mostSimulations < child.totalSimulations) {
+				mostSimulations = child.totalSimulations;
+				mostSimulatedMove = child.move;
 			}
 		}
 		return mostSimulatedMove;
 	}
 
-	public void doMove(int move)
+	// boolean of whether the move could be completed
+	public boolean doMove(int move)
 	{
-		if(currentRoot.children != null)
-			currentRoot = currentRoot.children[move];
+		for(var node : currentRoot.children)
+			if(node.move == move) {
+				currentRoot = node;
+				return true;
+			}
+		return false;
 	}
 
 	public void displayBoard()
@@ -119,33 +116,27 @@ public class MonteCarloTreeSearch {
 
 	public void displayPositionStrength()
 	{
-		if(currentRoot.children != null) {
-			var strength = new int[actionSpace];
-			for (var child : currentRoot.children)
-				strength[child.move] = child.totalSimulations;
-			System.out.println("Total Simulations");
-			iGo.display(strength, side, new HashSet<>(Collections.singleton(getStrongestMove())));
-			System.out.println("Policy Values");
-			iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
-			System.out.println("Utility Values");
-			iGo.display(getValue(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
-		}
-		else
-			System.out.println("Simulations have not been performed at this node");
+		var strength = new int[actionSpace];
+		for (var child : currentRoot.children)
+			strength[child.move] = child.totalSimulations;
+
+		System.out.println("Total Simulations");
+		iGo.display(strength, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		System.out.println("Policy Values");
+		iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		System.out.println("Utility Values");
+		iGo.display(getValue(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
 	}
 
 	public int[] getPolicy(int base)
 	{
+		int totalSimulations = 0;
+		for(var child : currentRoot.children)
+			totalSimulations += child.totalSimulations;
+
 		var policy = new int[actionSpace];
-
-		if(currentRoot.children != null) {
-			double totalSimulations = 0;
-			for(var child : currentRoot.children)
-				totalSimulations += child.totalSimulations;
-
-			for(var child : currentRoot.children)
-				policy[child.move] = (int)(base * child.totalSimulations / totalSimulations);
-		}
+		for(var child : currentRoot.children)
+			policy[child.move] = (base * child.totalSimulations / (1+totalSimulations));
 
 		return policy;
 	}
@@ -153,11 +144,8 @@ public class MonteCarloTreeSearch {
 	public int[] getValue(int base)
 	{
 		var value = new int[actionSpace];
-
-		if(currentRoot.children != null) {
-			for(var child : currentRoot.children)
-				value[child.move] = (int)(base * child.totalVictories / (1+child.totalSimulations));
-		}
+		for(var child : currentRoot.children)
+			value[child.move] = (base * child.totalVictories / (1+child.totalSimulations));
 
 		return value;
 	}
@@ -193,11 +181,10 @@ public class MonteCarloTreeSearch {
 
 	private void backupGameOutcome(Node walker, int victor)
 	{
-		while(walker.parent != null)
-		{
-			walker.totalSimulations ++;
-			if(victor == walker.player)
-				walker.totalVictories ++;
+		while(walker.parent != null) {
+			walker.totalSimulations++;
+			if (victor == walker.player)
+				walker.totalVictories++;
 			walker = walker.parent;
 		}
 	}
@@ -231,47 +218,36 @@ public class MonteCarloTreeSearch {
 
 	private void expandAllForNode(Node leaf)
 	{
-		leaf.children = new Node[actionSpace];
-
 		var game = prepareGameAtNode(leaf);
 
 		game.auditSensibleMovesRecommendationsForPlayer(-leaf.player);
-		var sensibilityOfMoves = game.getSensibleMovesForPlayerAsArray(-leaf.player);
-		for(int move = 0; move < area; move++)
-			leaf.children[move] = new Node(leaf, move, -leaf.player, sensibilityOfMoves[move]);
+		for(var move : game.getSensibleMovesForPlayer(-leaf.player))
+			leaf.children.add(new Node(leaf, move, -leaf.player));
 
 		// and, finally, add the "pass" move which is always legal
-		leaf.children[area] = new Node(leaf, area, -leaf.player, 1);
+		leaf.children.add(new Node(leaf, area, -leaf.player));
 
 		nodesExpanded ++;
 	}
 
 	private Optional<Node> getMostVisitableChildNode(Node currentNode)
 	{
-		if(currentNode.children == null)
-			return Optional.empty();
+		int totalSimulations = currentNode.children.stream().map(child -> child.totalSimulations).reduce(0, Integer::sum);
 
-		int totalSimulations = 0;
-		for(var child : currentNode.children)
-			if(child.sensibility == 1)
-				totalSimulations += child.totalSimulations;
-
-		int bestMove = -1;
+		Node bestNode = null;
 		double bestScore = -1;
-		for(var child : currentNode.children)
-		{
-			if(child.sensibility == 1) {
-				double score = (double) child.totalVictories / (1+child.totalSimulations) + c * Math.pow(Math.log(totalSimulations) / (1+child.totalSimulations), 0.5);
-				if (bestScore < score) {
-					bestScore = score;
-					bestMove = child.move;
-				}
+		for(var child : currentNode.children) {
+			double score = (double) child.totalVictories / (1 + child.totalSimulations) + c * Math.pow(Math.log(totalSimulations) / (1 + child.totalSimulations), 0.5);
+			if (bestScore < score) {
+				bestScore = score;
+				bestNode = child;
 			}
 		}
 
-		assert bestMove != -1;
-
-		return Optional.of(currentNode.children[bestMove]);
+		if(bestNode == null)
+			return Optional.empty();
+		else
+			return Optional.of(bestNode);
 	}
 
 	public Stack<Integer> getMovesetFromLineage()
