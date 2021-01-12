@@ -235,6 +235,7 @@ public class MonteCarloTreeSearch {
 
 		var game = prepareGameAtNode(leaf);
 
+		game.auditSensibleMovesRecommendationsForPlayer(-leaf.player);
 		var sensibilityOfMoves = game.getSensibleMovesForPlayerAsArray(-leaf.player);
 		for(int move = 0; move < area; move++)
 			leaf.children[move] = new Node(leaf, move, -leaf.player, sensibilityOfMoves[move]);

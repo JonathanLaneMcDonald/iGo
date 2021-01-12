@@ -328,11 +328,31 @@ public class iGo
 		return legalForPlayer;
 	}
 
+	public void auditSensibleMovesRecommendationsForPlayer(int player)
+	{
+		var falseAllegations = new HashSet<Integer>();
+		var allegedlySensibleMovesForPlayer = getSensibleMovesForPlayerAsArray(player);
+		for(int mv = 0; mv < area; mv++) {
+			if(allegedlySensibleMovesForPlayer[mv] == 1) {
+				var moveAttempt = new iGo(this);
+				if (!moveAttempt.placeStone(mv, player))
+					falseAllegations.add(mv);
+			}
+		}
+
+		if(!falseAllegations.isEmpty()) {
+			display(falseAllegations);
+			System.out.println("Falsely alleged sensible moves");
+		}
+
+	}
+
 	public int[] getSensibleMovesForPlayerAsArray(int player)
 	{
 		var sensibleMoves = new int[area];
 		for(var mv : getSensibleMovesForPlayer(player))
 			sensibleMoves[mv] = 1;
+
 		return sensibleMoves;
 	}
 

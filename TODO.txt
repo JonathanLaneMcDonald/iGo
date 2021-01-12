@@ -3,6 +3,10 @@ Todo:
 	2) cache the current board state in a reference in the Node class so we don't have to replay the entire game all the time. that should speed things up.
 	3) bug: it seems like the two players are ending up playing different games, too, sometimes toward the end...
 		slight refinement to that bug... the tree search is sometimes recommending illegal moves!
+		i'm counting simulation errors now and it'll be fine up to a point and then all hell breaks loose!
+		Possible Remedies/Diagnostics:
+			cache intermediate board states and verify that they match with the globally unrolled version
+			return an arraylist of sensible moves instead of an array of moves that may or may not be sensible (also, it may speed things up toward end-game play just a tad)
 
 
 	3) add functionality to extract gamestate at each node so that i can actually build a dataset
