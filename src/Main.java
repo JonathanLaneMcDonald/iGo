@@ -29,7 +29,7 @@ public class Main
 
 	public static int mctsSelfPlayTest(int boardSide, int rollouts, double expansionProbability)
 	{
-		var policy = new MonteCarloTreeSearch(boardSide);
+		var policy = new MonteCarloTreeSearch(boardSide, 6.5);
 		policy.displayBoard();
 
 		int consecutivePasses = 0;

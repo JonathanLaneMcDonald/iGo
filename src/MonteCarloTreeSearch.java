@@ -61,13 +61,13 @@ public class MonteCarloTreeSearch {
 
 	Random random;
 
-	public MonteCarloTreeSearch(int side)
+	public MonteCarloTreeSearch(int side, double komi)
 	{
 		c = 1;
 
 		this.side = side;
 		area = side*side;
-		komi = 6.5;
+		this.komi = komi;
 		actionSpace = area+1;
 
 		random = new Random();
