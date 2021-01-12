@@ -72,7 +72,7 @@ public class Main
 		while(gamesPlayed < gamesToPlay)
 		{
 			int player = 1;
-			var game = new iGo(edgeLength);
+			var game = new iGo(edgeLength, 6.5);
 			boolean gameContainsErrors = false;
 
 			var random = new Random();
@@ -138,7 +138,7 @@ public class Main
 		for(var moveset : movesets)
 		{
 			int player = 1;
-			var game = new iGo(edgeLength);
+			var game = new iGo(edgeLength, 6.5);
 			boolean gameContainsErrors = false;
 
 			for(var move : moveset)

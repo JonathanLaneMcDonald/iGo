@@ -31,16 +31,16 @@ public class iGo
 
 	static ArrayList<ArrayList<Integer>> neighbors;
 
-	public iGo(int side)
+	public iGo(int side, double komi)
 	{
-		this(side, 0);
+		this(side, komi, 0);
 	}
 
-	public iGo(int side, int diagnosticLevel)
+	public iGo(int side, double komi, int diagnosticLevel)
 	{
 		this.side = side;
 		area = side*side;
-		komi = 6.5;
+		this.komi = komi;
 		ko = new Ko(-1, -1);
 
 		board = new int[area];

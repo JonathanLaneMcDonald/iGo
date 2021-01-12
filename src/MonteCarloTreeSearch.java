@@ -51,6 +51,7 @@ public class MonteCarloTreeSearch {
 
 	int side;
 	int area;
+	double komi;
 	int actionSpace;
 
 	Node root;
@@ -66,6 +67,7 @@ public class MonteCarloTreeSearch {
 
 		this.side = side;
 		area = side*side;
+		komi = 6.5;
 		actionSpace = area+1;
 
 		random = new Random();
@@ -191,7 +193,7 @@ public class MonteCarloTreeSearch {
 
 	private iGo prepareGameAtNode(Node currentNode)
 	{
-		var game = new iGo(side);
+		var game = new iGo(side, komi);
 		for(var move : lineageToMoveset(currentNode)) {
 			if (!game.placeStone(move.first, move.second)) {
 				simulationErrors ++;
