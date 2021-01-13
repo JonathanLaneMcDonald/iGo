@@ -86,17 +86,22 @@ public class MonteCarloTreeSearch {
 		return -currentRoot.player;
 	}
 
-	public int getStrongestMove()
+	public int getWeightedRandomStrongestMoveFromTopK(int k)
 	{
-		int mostSimulations = -1;
-		int mostSimulatedMove = -1;
-		for(var child : currentRoot.children) {
-			if (mostSimulations < child.totalSimulations) {
-				mostSimulations = child.totalSimulations;
-				mostSimulatedMove = child.move;
-			}
+		var movesByStrength = currentRoot.children.stream().map(child -> new Tuple<Integer, Integer>(child.totalSimulations, child.move)).sorted((move1, move2) -> move2.first - move1.first).collect(Collectors.toList());
+		var weightedCandidates = movesByStrength.stream().limit(k).collect(Collectors.toList());
+
+		int sumOfSimulations = weightedCandidates.stream().map(p -> p.first).reduce(0, Integer::sum);
+		int selection = random.nextInt(sumOfSimulations);
+
+		int candidate = 0;
+		int sumSeen = weightedCandidates.get(candidate).first;
+		while(sumSeen < selection)
+		{
+			candidate ++;
+			sumSeen += weightedCandidates.get(candidate).first;
 		}
-		return mostSimulatedMove;
+		return weightedCandidates.get(candidate).second;
 	}
 
 	// boolean of whether the move could be completed
@@ -123,19 +128,19 @@ public class MonteCarloTreeSearch {
 			noise[child.move] = (int)(1000*child.noise);
 
 		System.out.println("Added Noise");
-		iGo.display(noise, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		iGo.display(noise, side, new HashSet<>(Collections.singleton(getWeightedRandomStrongestMoveFromTopK(1))));
 
 		var strength = new int[actionSpace];
 		for (var child : currentRoot.children)
 			strength[child.move] = child.totalSimulations;
 
 		System.out.println("Total Simulations");
-		iGo.display(strength, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		iGo.display(strength, side, new HashSet<>(Collections.singleton(getWeightedRandomStrongestMoveFromTopK(1))));
 
 		System.out.println("Policy Values");
-		iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getWeightedRandomStrongestMoveFromTopK(1))));
 		System.out.println("Utility Values");
-		iGo.display(getValue(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
+		iGo.display(getValue(1000), side, new HashSet<>(Collections.singleton(getWeightedRandomStrongestMoveFromTopK(1))));
 	}
 
 	public int[] getPolicy(int base)
@@ -165,14 +170,14 @@ public class MonteCarloTreeSearch {
 		for(int i = 0; i < numberOfSimulations; i++) {
 			simulate(probabilityOfExpansion);
 			if(i != 0 && i % 10000 == 0) {
-				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getStrongestMove()+" is the strongest move");
+				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getWeightedRandomStrongestMoveFromTopK(1)+" is the strongest move");
 				if(i % 100000 == 0) {
 					displayBoard();
 					//displayPositionStrength();
 				}
 			}
 		}
-		System.out.println(nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getStrongestMove()+" is the strongest move");
+		//System.out.println(nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getWeightedRandomStrongestMoveFromTopK(1)+" is the strongest move");
 	}
 
 	private void simulate(double probabilityOfExpansion)
