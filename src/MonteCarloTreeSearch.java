@@ -30,8 +30,6 @@ public class MonteCarloTreeSearch {
 		public Node parent;
 		public ArrayList<Node> children;
 
-		public iGo cachedGame;
-
 		public Node(Node parent, int move, int player)
 		{
 			this.move = move;
@@ -42,8 +40,6 @@ public class MonteCarloTreeSearch {
 
 			this.parent = parent;
 			children = new ArrayList<>();
-
-			cachedGame = null;
 		}
 	}
 
@@ -77,7 +73,6 @@ public class MonteCarloTreeSearch {
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
 		root = new Node(null, -1, -1);
-		root.cachedGame = new iGo(side, komi);
 		expandAllForNode(root);
 		currentRoot = root;
 	}
@@ -106,10 +101,6 @@ public class MonteCarloTreeSearch {
 		for(var node : currentRoot.children)
 			if(node.move == move) {
 				currentRoot = node;
-				currentRoot.cachedGame = new iGo(currentRoot.parent.cachedGame);
-				if(!currentRoot.cachedGame.placeStone(currentRoot.move, currentRoot.player)) {
-					return false;
-				}
 				return true;
 			}
 		return false;
@@ -117,7 +108,7 @@ public class MonteCarloTreeSearch {
 
 	public void displayBoard()
 	{
-		var game = prepareGameAtNodeFromCached(currentRoot);
+		var game = prepareGameAtNode(currentRoot);
 		game.display(new HashSet<>(Collections.singleton(currentRoot.move)));
 	}
 
@@ -181,7 +172,7 @@ public class MonteCarloTreeSearch {
 		else
 			leaf = recurseToLeaf(currentRoot);
 
-		var victor = randomRollout(prepareGameAtNodeFromCached(leaf), leaf.player);
+		var victor = randomRollout(prepareGameAtNode(leaf), leaf.player);
 
 		backupGameOutcome(leaf, victor);
 	}
@@ -208,27 +199,6 @@ public class MonteCarloTreeSearch {
 		}		return game;
 	}
 
-	private iGo prepareGameAtNodeFromCached(Node currentNode)
-	{
-		iGo game;
-		var walker = currentNode;
-		var moveset = new Stack<Tuple<Integer,Integer>>();
-		while(walker.parent != null && walker.cachedGame == null)
-		{
-			moveset.add(new Tuple<Integer, Integer>(walker.move, walker.player));
-			walker = walker.parent;
-		}
-		game = new iGo(walker.cachedGame);
-
-		while(!moveset.empty()) {
-			var move = moveset.pop();
-			if (!game.placeStone(move.first, move.second)) {
-				simulationErrors ++;
-			}
-		}
-		return game;
-	}
-
 	private Node recurseToAndExpandLeaf(Node currentNode)
 	{
 		var leaf = recurseToLeaf(currentNode);
@@ -247,9 +217,8 @@ public class MonteCarloTreeSearch {
 
 	private void expandAllForNode(Node leaf)
 	{
-		var game = prepareGameAtNodeFromCached(leaf);
+		var game = prepareGameAtNode(leaf);
 
-		game.auditSensibleMovesRecommendationsForPlayer(-leaf.player);
 		for(var move : game.getSensibleMovesForPlayer(-leaf.player))
 			leaf.children.add(new Node(leaf, move, -leaf.player));
 
