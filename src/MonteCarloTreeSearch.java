@@ -108,11 +108,6 @@ public class MonteCarloTreeSearch {
 				currentRoot = node;
 				currentRoot.cachedGame = new iGo(currentRoot.parent.cachedGame);
 				if(!currentRoot.cachedGame.placeStone(currentRoot.move, currentRoot.player)) {
-					//System.out.println("An Error Has Occurred In Playback");
-					//System.out.println("Parent Game");
-					//currentRoot.parent.cachedGame.display(new HashSet<>());
-					//System.out.println("Child Game");
-					//currentRoot.cachedGame.display(new HashSet<>(Collections.singleton(currentRoot.move)));
 					return false;
 				}
 				return true;
@@ -122,7 +117,7 @@ public class MonteCarloTreeSearch {
 
 	public void displayBoard()
 	{
-		var game = prepareGameAtNode(currentRoot);
+		var game = prepareGameAtNodeFromCached(currentRoot);
 		game.display(new HashSet<>(Collections.singleton(currentRoot.move)));
 	}
 
@@ -186,7 +181,7 @@ public class MonteCarloTreeSearch {
 		else
 			leaf = recurseToLeaf(currentRoot);
 
-		var victor = randomRollout(prepareGameAtNode(leaf), leaf.player);
+		var victor = randomRollout(prepareGameAtNodeFromCached(leaf), leaf.player);
 
 		backupGameOutcome(leaf, victor);
 	}
@@ -203,13 +198,10 @@ public class MonteCarloTreeSearch {
 
 	private iGo prepareGameAtNode(Node currentNode)
 	{
-		//System.out.println("****************************************************************************");
-		//System.out.println("Instantiating new game");
 		var game = new iGo(side, komi);
 		var moveset = lineageToMoveset(currentNode);
 		while(!moveset.empty()) {
 			var move = moveset.pop();
-			//game.displayGroupsAndOwnership();
 			if (!game.placeStone(move.first, move.second)) {
 				simulationErrors++;
 			}
@@ -228,7 +220,8 @@ public class MonteCarloTreeSearch {
 		}
 		game = new iGo(walker.cachedGame);
 
-		for(var move : moveset) {
+		while(!moveset.empty()) {
+			var move = moveset.pop();
 			if (!game.placeStone(move.first, move.second)) {
 				simulationErrors ++;
 			}
@@ -254,7 +247,7 @@ public class MonteCarloTreeSearch {
 
 	private void expandAllForNode(Node leaf)
 	{
-		var game = prepareGameAtNode(leaf);
+		var game = prepareGameAtNodeFromCached(leaf);
 
 		game.auditSensibleMovesRecommendationsForPlayer(-leaf.player);
 		for(var move : game.getSensibleMovesForPlayer(-leaf.player))

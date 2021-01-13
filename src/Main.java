@@ -40,24 +40,16 @@ public class Main
 
 			policy.simulate(rollouts, expansionProbability);
 
-			//policy.displayPositionStrength();
+			policy.displayPositionStrength();
 			var strongestMove = policy.getStrongestMove();
-
-			//System.out.print("Move Number: "+moveNumber+"; "+(policy.getNextPlayerToMove()==1?"Black(X)":"White(O)")+" to play; Move: "+strongestMove);
-			//System.out.print("History: ");
-			//var movesetToDate = policy.getMovesetFromLineage();
-			//while(!movesetToDate.isEmpty())
-			//	System.out.print(movesetToDate.pop()+" ");
-			//System.out.print("\n");
-
 			if(strongestMove == policy.area) {
 				consecutivePasses++;
 			}
 			else {
 				consecutivePasses = 0;
-				policy.doMove(strongestMove);
-				policy.displayBoard();
 			}
+			policy.doMove(strongestMove);
+			policy.displayBoard();
 		}
 		return moveNumber;
 	}
