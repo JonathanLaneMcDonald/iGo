@@ -1,12 +1,21 @@
 
 Todo:
-	3) institute a resignation threshold (maybe 5% like in the papers). that would probably cut out half the computation time since we wouldn't be exploring the whole board again and again with floodfill
+	1) put in some parameters to randomize things like:
+		III) Randomize the number of playouts to do for a particular move - draw from a distribution like 2^(normal(6, 1)) or whatever
+	
+	3) build a lineageToFrames function to export the frames of the game in such a way as they can be used in a training dataset
+		I) count the moves left in the stack
+		II) state to string
+		III) get the policy (just the move of the parent -- i'm already doing that)
+		IV) get the value at the parent (sum of all victories over sum of all simulations of all children at that node)
+	
+	2) put together a class that can run games where each player uses different strategies
+		such a class can be used to generate training data and can be used to figure out relative strength between one policy and another
 
+	4) go ahead and write something in python that can train on these data and see how we go
+	
+	5) run multiple instances of this on the big computer to generate lots of training data to get a model started
 
-	3) add functionality to extract gamestate at each node so that i can actually build a dataset
-	4) build the functionality needed to play tournaments with the specifications outlined below
-		this includes the functionality to write a training-ready dataset to file
-	5) develop a model in python that can train on the exported dataset
 	
 	that should really be enough for today!
 	

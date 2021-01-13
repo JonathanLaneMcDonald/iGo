@@ -169,7 +169,7 @@ public class MonteCarloTreeSearch {
 	{
 		for(int i = 0; i < numberOfSimulations; i++) {
 			simulate(probabilityOfExpansion);
-			if(i != 0 && i % 10000 == 0) {
+			if(i != 0 && i % 1000 == 0) {
 				System.out.println(i + " simulations performed; " + nodesExpanded + " nodes expanded; "+simulationErrors+" simulation errors; "+getWeightedRandomStrongestMoveFromTopK(1)+" is the strongest move");
 				if(i % 100000 == 0) {
 					displayBoard();
