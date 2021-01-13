@@ -1,3 +1,6 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -13,24 +16,42 @@ public class Main
 
 		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
-		mctsSelfPlayTest(7, 1000, 0, 1);
+		// mctsSelfPlayTest(7, 1000, 0, 1);
 
-		//datasetGeneratorTest(5, 100);
+		datasetGeneratorTest(10000, 7, 100);
 	}
 
-	public static void datasetGeneratorTest(int boardSize, int rollouts)
+	public static void datasetGeneratorTest(int gamesToPlay, int boardSize, int rollouts)
 	{
-/*		int moves = 0;
-		for(int game = 0; game < 100; game++){
-			moves += mctsSelfPlayTest(boardSize, rollouts, 1);
-			System.out.println(game + " games and " + moves + " moves");
-		}*/
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter("training data export test"));
+
+			int moves = 0;
+			long startTime = System.nanoTime();
+			for(int game = 1; game < gamesToPlay; game++){
+				var gameRecords = mctsSelfPlayTest(boardSize, rollouts, rollouts, 1);
+				for(var record : gameRecords)
+					writer.write(record + "\n");
+				writer.flush();
+				moves += gameRecords.size();
+
+				var elapsedTime = System.nanoTime() - startTime;
+				var timePerGame = elapsedTime / game;
+				var timePerMove = elapsedTime / moves;
+
+				System.out.println(game + " games played and " + moves + " moves written -- "+" Time/(m,g): ("+timePerMove+","+timePerGame+")");
+			}
+			writer.close();
+		}
+		catch(IOException e) {
+			System.out.println("Conflatulations, you found a runtime error!");
+		}
 	}
 
-	public static int mctsSelfPlayTest(int boardSide, int rolloutsBlack, int rolloutsWhite, double expansionProbability)
+	public static ArrayList<String> mctsSelfPlayTest(int boardSide, int rolloutsBlack, int rolloutsWhite, double expansionProbability)
 	{
 		var policy = new MonteCarloTreeSearch(boardSide, 6.5, 0.25);
-		policy.displayBoard();
+		//policy.displayBoard();
 
 		int consecutivePasses = 0;
 		int moveNumber = 0;
@@ -43,7 +64,7 @@ public class Main
 			else
 				policy.simulate(rolloutsWhite, expansionProbability);
 
-			policy.displayPositionStrength();
+			//policy.displayPositionStrength();
 			var strongestMove = policy.getWeightedRandomStrongestMoveFromTopK(3);
 			if(strongestMove == policy.area) {
 				consecutivePasses++;
@@ -52,12 +73,10 @@ public class Main
 				consecutivePasses = 0;
 			}
 			policy.doMove(strongestMove);
-			policy.displayBoard();
+			//policy.displayBoard();
 		}
 
-		var gameRecord = policy.exportTrainingDataForGame();
-
-		return moveNumber;
+		return policy.exportTrainingDataForGame();
 	}
 
 	private static void randomSamplerTest(int gamesToPlay, int edgeLength)
