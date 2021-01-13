@@ -26,17 +26,19 @@ public class MonteCarloTreeSearch {
 
 		public int totalVictories;
 		public int totalSimulations;
+		double noise;
 
 		public Node parent;
 		public ArrayList<Node> children;
 
-		public Node(Node parent, int move, int player)
+		public Node(Node parent, int move, int player, double noise)
 		{
 			this.move = move;
 			this.player = player;
 
 			totalVictories = 0;
 			totalSimulations = 0;
+			this.noise = noise;
 
 			this.parent = parent;
 			children = new ArrayList<>();
@@ -56,8 +58,9 @@ public class MonteCarloTreeSearch {
 	int simulationErrors;
 
 	Random random;
+	double noiseWeight;
 
-	public MonteCarloTreeSearch(int side, double komi)
+	public MonteCarloTreeSearch(int side, double komi, double noiseWeight)
 	{
 		c = 1;
 
@@ -67,12 +70,13 @@ public class MonteCarloTreeSearch {
 		actionSpace = area+1;
 
 		random = new Random();
+		this.noiseWeight = noiseWeight;
 
 		nodesExpanded = 0;
 		simulationErrors = 0;
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
-		root = new Node(null, -1, -1);
+		root = new Node(null, -1, -1, 0);
 		expandAllForNode(root);
 		currentRoot = root;
 	}
@@ -114,12 +118,20 @@ public class MonteCarloTreeSearch {
 
 	public void displayPositionStrength()
 	{
+		var noise = new int[actionSpace];
+		for (var child : currentRoot.children)
+			noise[child.move] = (int)(1000*child.noise);
+
+		System.out.println("Added Noise");
+		iGo.display(noise, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+
 		var strength = new int[actionSpace];
 		for (var child : currentRoot.children)
 			strength[child.move] = child.totalSimulations;
 
 		System.out.println("Total Simulations");
 		iGo.display(strength, side, new HashSet<>(Collections.singleton(getStrongestMove())));
+
 		System.out.println("Policy Values");
 		iGo.display(getPolicy(1000), side, new HashSet<>(Collections.singleton(getStrongestMove())));
 		System.out.println("Utility Values");
@@ -219,11 +231,22 @@ public class MonteCarloTreeSearch {
 	{
 		var game = prepareGameAtNode(leaf);
 
-		for(var move : game.getSensibleMovesForPlayer(-leaf.player))
-			leaf.children.add(new Node(leaf, move, -leaf.player));
+		var sensibleMoves = game.getSensibleMovesForPlayer(-leaf.player);
+
+		double sumOfNoise = 0;
+		var noise = new Stack<Double>();
+		for(int i = 0; i < sensibleMoves.size(); i++)
+		{
+			double newNoise = Math.max(0, random.nextGaussian());
+			sumOfNoise += newNoise;
+			noise.add(newNoise);
+		}
+
+		for(var move : sensibleMoves)
+			leaf.children.add(new Node(leaf, move, -leaf.player, noise.pop()/sumOfNoise));
 
 		// and, finally, add the "pass" move which is always legal
-		leaf.children.add(new Node(leaf, area, -leaf.player));
+		leaf.children.add(new Node(leaf, area, -leaf.player, 0));
 
 		nodesExpanded ++;
 	}
@@ -235,7 +258,13 @@ public class MonteCarloTreeSearch {
 		Node bestNode = null;
 		double bestScore = -1;
 		for(var child : currentNode.children) {
-			double score = (double) child.totalVictories / (1 + child.totalSimulations) + c * Math.pow(Math.log(totalSimulations) / (1 + child.totalSimulations), 0.5);
+
+			double utility = (double) child.totalVictories / (1 + child.totalSimulations);
+			double policy = c * Math.pow(Math.log(totalSimulations) / (1 + child.totalSimulations), 0.5);
+			double noise = child.noise;
+
+			double score = utility + ((1 - noiseWeight) * policy) + (noiseWeight * noise);
+
 			if (bestScore < score) {
 				bestScore = score;
 				bestNode = child;
