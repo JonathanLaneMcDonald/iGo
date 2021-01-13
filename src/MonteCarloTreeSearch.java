@@ -310,7 +310,11 @@ public class MonteCarloTreeSearch {
 
 	private String stateToDescriptors(Node state, int stackLen)
 	{
-		return String.valueOf(stackLen) + "\t" + prepareGameAtNode(state).boardAsString() + "\t" + trainingPolicyAtNode(state) + "\t" + trainingUtilityAtNode(state);
+		return String.valueOf(stackLen) + "\t" +
+				prepareGameAtNode(state.parent).boardAsString() + "\t" +
+				(state.player == 1 ? "B" : "W") + "\t" +
+				trainingPolicyAtNode(state) + "\t" +
+				trainingUtilityAtNode(state);
 	}
 
 	public ArrayList<String> exportTrainingDataForGame()
