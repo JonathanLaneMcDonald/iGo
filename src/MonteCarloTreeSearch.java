@@ -298,6 +298,37 @@ public class MonteCarloTreeSearch {
 		return moveset;
 	}
 
+	private String trainingPolicyAtNode(Node state)
+	{
+		return state.move < area ? String.valueOf(state.move) : "pass";
+	}
+
+	private String trainingUtilityAtNode(Node state)
+	{
+		return String.valueOf((double)(state.totalVictories)/state.totalSimulations);
+	}
+
+	private String stateToDescriptors(Node state, int stackLen)
+	{
+		return String.valueOf(stackLen) + "\t" + prepareGameAtNode(state).boardAsString() + "\t" + trainingPolicyAtNode(state) + "\t" + trainingUtilityAtNode(state);
+	}
+
+	public ArrayList<String> exportTrainingDataForGame()
+	{
+		var nodeStack = new Stack<Node>();
+		var walker = currentRoot;
+		while(walker.parent != null) {
+			nodeStack.add(walker);
+			walker = walker.parent;
+		}
+
+		var trainingData = new ArrayList<String>();
+		while(!nodeStack.empty()) {
+			trainingData.add(stateToDescriptors(nodeStack.pop(), nodeStack.size()));
+		}
+		return trainingData;
+	}
+
 	private int randomRollout(iGo game, int nextToPlay)
 	{
 		int player = nextToPlay;

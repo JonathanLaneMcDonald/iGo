@@ -624,4 +624,16 @@ public class iGo
 		}
 		System.out.print("\n");
 	}
+
+	public String boardAsString()
+	{
+		var boardRepr = "";
+		for(int i = 0; i < area; i++) {
+			if(board[i] < area && ownership[board[i]] != 0)
+				boardRepr += ownership[board[i]] == 1 ? "B" : "W";
+			else
+				boardRepr += ".";
+		}
+		return boardRepr;
+	}
 }

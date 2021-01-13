@@ -13,21 +13,21 @@ public class Main
 
 		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
-		mctsSelfPlayTest(7, 10000, 1);
+		mctsSelfPlayTest(7, 1000, 0, 1);
 
 		//datasetGeneratorTest(5, 100);
 	}
 
 	public static void datasetGeneratorTest(int boardSize, int rollouts)
 	{
-		int moves = 0;
+/*		int moves = 0;
 		for(int game = 0; game < 100; game++){
 			moves += mctsSelfPlayTest(boardSize, rollouts, 1);
 			System.out.println(game + " games and " + moves + " moves");
-		}
+		}*/
 	}
 
-	public static int mctsSelfPlayTest(int boardSide, int rollouts, double expansionProbability)
+	public static int mctsSelfPlayTest(int boardSide, int rolloutsBlack, int rolloutsWhite, double expansionProbability)
 	{
 		var policy = new MonteCarloTreeSearch(boardSide, 6.5, 0.25);
 		policy.displayBoard();
@@ -38,7 +38,10 @@ public class Main
 
 			moveNumber ++;
 
-			policy.simulate(rollouts, expansionProbability);
+			if(policy.getNextPlayerToMove() == 1)
+				policy.simulate(rolloutsBlack, expansionProbability);
+			else
+				policy.simulate(rolloutsWhite, expansionProbability);
 
 			policy.displayPositionStrength();
 			var strongestMove = policy.getWeightedRandomStrongestMoveFromTopK(3);
@@ -51,6 +54,9 @@ public class Main
 			policy.doMove(strongestMove);
 			policy.displayBoard();
 		}
+
+		var gameRecord = policy.exportTrainingDataForGame();
+
 		return moveNumber;
 	}
 
