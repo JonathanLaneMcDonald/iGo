@@ -30,7 +30,7 @@ public class MonteCarloTreeSearch {
 		public Node parent;
 		public ArrayList<Node> children;
 
-		iGo cachedGame;
+		public iGo cachedGame;
 
 		public Node(Node parent, int move, int player)
 		{
@@ -77,6 +77,7 @@ public class MonteCarloTreeSearch {
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
 		root = new Node(null, -1, -1);
+		root.cachedGame = new iGo(side, komi);
 		expandAllForNode(root);
 		currentRoot = root;
 	}
@@ -105,6 +106,15 @@ public class MonteCarloTreeSearch {
 		for(var node : currentRoot.children)
 			if(node.move == move) {
 				currentRoot = node;
+				currentRoot.cachedGame = new iGo(currentRoot.parent.cachedGame);
+				if(!currentRoot.cachedGame.placeStone(currentRoot.move, currentRoot.player)) {
+					//System.out.println("An Error Has Occurred In Playback");
+					//System.out.println("Parent Game");
+					//currentRoot.parent.cachedGame.display(new HashSet<>());
+					//System.out.println("Child Game");
+					//currentRoot.cachedGame.display(new HashSet<>(Collections.singleton(currentRoot.move)));
+					return false;
+				}
 				return true;
 			}
 		return false;
@@ -193,8 +203,32 @@ public class MonteCarloTreeSearch {
 
 	private iGo prepareGameAtNode(Node currentNode)
 	{
+		//System.out.println("****************************************************************************");
+		//System.out.println("Instantiating new game");
 		var game = new iGo(side, komi);
-		for(var move : lineageToMoveset(currentNode)) {
+		var moveset = lineageToMoveset(currentNode);
+		while(!moveset.empty()) {
+			var move = moveset.pop();
+			//game.displayGroupsAndOwnership();
+			if (!game.placeStone(move.first, move.second)) {
+				simulationErrors++;
+			}
+		}		return game;
+	}
+
+	private iGo prepareGameAtNodeFromCached(Node currentNode)
+	{
+		iGo game;
+		var walker = currentNode;
+		var moveset = new Stack<Tuple<Integer,Integer>>();
+		while(walker.parent != null && walker.cachedGame == null)
+		{
+			moveset.add(new Tuple<Integer, Integer>(walker.move, walker.player));
+			walker = walker.parent;
+		}
+		game = new iGo(walker.cachedGame);
+
+		for(var move : moveset) {
 			if (!game.placeStone(move.first, move.second)) {
 				simulationErrors ++;
 			}

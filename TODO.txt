@@ -7,6 +7,7 @@ Todo:
 		Possible Remedies/Diagnostics:
 			cache intermediate board states and verify that they match with the globally unrolled version
 			return an arraylist of sensible moves instead of an array of moves that may or may not be sensible (also, it may speed things up toward end-game play just a tad)
+	3) institute a resignation threshold (maybe 5% like in the papers). that would probably cut out half the computation time since we wouldn't be exploring the whole board again and again with floodfill
 
 
 	3) add functionality to extract gamestate at each node so that i can actually build a dataset

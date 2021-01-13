@@ -270,6 +270,19 @@ public class iGo
 			return true;
 		}
 		else {
+			// am i updating liberties properly?
+			// if i end up here, copy the value for this position
+			// then run the determinelegalityatpositinforplayer thing
+			// then compare the new result with the old one
+
+			//int legalityForBlack = legalForBlack[mv];
+			//int legalityForWhite = legalForWhite[mv];
+
+			//determineLegalityAtPosition(mv);
+
+			//if((legalityForBlack != legalForBlack[mv]) || (legalityForWhite != legalForWhite[mv]))
+			//	System.out.println("Legal Moves Are Out Of Date");
+
 			return false;
 		}
 	}
