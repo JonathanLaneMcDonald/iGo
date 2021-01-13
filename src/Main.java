@@ -18,18 +18,21 @@ public class Main
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		// mctsSelfPlayTest(7, 1000, 0, 1);
 
-		datasetGeneratorTest(10000, 7, 100);
+		int[] boardSizes = {7,7,7,7,8,8,8,9,9};
+		datasetGeneratorTest(10000, boardSizes);
 	}
 
-	public static void datasetGeneratorTest(int gamesToPlay, int boardSize, int rollouts)
+	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes)
 	{
+		var random = new Random();
 		try {
 			BufferedWriter writer = new BufferedWriter(new FileWriter("training data export test"));
 
 			int moves = 0;
 			long startTime = System.nanoTime();
 			for(int game = 1; game < gamesToPlay; game++){
-				var gameRecords = mctsSelfPlayTest(boardSize, rollouts, rollouts, 1);
+				var boardSize = boardSizes[random.nextInt(boardSizes.length)];
+				var gameRecords = mctsSelfPlayTest(boardSize, boardSize*boardSize, boardSize*boardSize, 1);
 				for(var record : gameRecords)
 					writer.write(record + "\n");
 				writer.flush();
