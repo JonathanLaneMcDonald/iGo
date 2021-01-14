@@ -1,5 +1,22 @@
 
 Todo:
+	1) big thing is get a version of this where i can run it in a few concurrent processes on the big machine so i can build a dataset
+		while that's going, i can look into getting dl4j working in general and then working with keras models
+			then while that's going, i can be working on streamlining the self-play and evaluation algorithms
+			
+			at which point, i'm perfectly happy to just let it run in a single thread for a while and come back occasionally to look at some pretty graphs and maybe challenge myself
+	
+		then i might look into scaling it up to the full range of board sizes 9 through 19 sampling in roughly the way i am now
+		at that rate, i wonder if i'd be able to keep up with its growth on a 9x9 or a 13x13 or a 19x19... that'll be really interesting to see
+		
+		of course, i'll need to make a play interface so i can actually do all that in an interactive way... what features will my gui have?
+	
+	2) the match facilitator class will probably take a "match configuration" describing either a tournament to determine the strongest model or self-play to generate training data
+		the match facilitator will probably write directly to log files and return a "match result"...? maybe lol
+	
+	
+	
+
 	4) go ahead and write something in python that can train on these data and see how we go
 		pretty sure i'm at the point now where i can begin fitting a model...
 	
