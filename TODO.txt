@@ -3,23 +3,16 @@ Apparently, symmetries aren't a thing.
 So don't use symmetries this time.
 
 Todo:
-	?) maybe i could just have kind of a relaxed attitude toward all this... like my training regime might look something like this:
-		1) whenever doing self-play, write/append the games into a file titled something like "self-play games YYYYMMDD"
-		2) at midnight, stop doing self-play and update the current strongest model by:
-			I) figuring out how many moves were generated in the new self-play dataset
-			II) uniformly sampling that number of moves from the most recent million moves of self-play and training with sgd, momentum = 0.9, and batch size = 256 like in the KataGo paper.
-			III) save a checkpoint for the updated model and play it against the current strongest model to see if there will be any usurpation...
-			IV) basically continue like this indefinitely
-		3) probably want to instantiate that resignation threshold. if a player notices that his best shot is < 5%, then he passes. if his opponent notices that his parent has < 5% and has resigned, then the current player accepts the resignation and the game is recorded and we move on.
+	training method:
+		i think i don't care that much about specifics at the moment. it looks like i'll be able to generate on the order of 100,000 training samples per day on a 9x9 board.
+		if that's the case, then i'm happy to just:
+			generate self-play data through midnight, then 
+			train the current model on 128 batches of 1024 samples, then
+			do a quick and easy tournament of like 200 games with no look ahead and, say, weighted random sampling with a temperature uniformly decreasing across boardArea moves
+				simple majority winner is tomorrow's policy network
+		and just keep that going for a while...
+		and maybe on the cpu, have an ongoing tournament between all the models so far to figure out more precisely how strong they are and all that
 
-
-
-	1) write a class to handle sampling from saved game data.
-		this will
-			ingest data files
-			reconstruct individual games
-			generate individual data frames based on the model's input and output
-			maybe even satisfy keras's definition of a fit_generator at some point. I'm happy to just produce arrays right now.
 
 
 

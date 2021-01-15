@@ -185,13 +185,13 @@ def create_dataset(games, samples, maxSize):
 		value[s][0] = selected_game.game_outcome
 
 		s += 1
-		if s % (1024*8) == 0:
+		if s % (1024*16) == 0:
 			print(s, samples)
 
 	return features, policy, value
 
 """ Model Params """
-maxSize = 13
+maxSize = 9
 
 """ Build a 2d model """
 model = build_iGo_model(64, 6, (maxSize, maxSize, 6), 1 + maxSize**2)
@@ -201,8 +201,8 @@ games = parse('self-play data 20210115 vanilla mcts random rollouts')
 print(len(games),'games loaded into training set')
 
 """ Training loop """
-batches = 256
-batch_size = 256
+batches = 128
+batch_size = 1024
 samples = batch_size * batches
 
 for e in range(1, 1000):
