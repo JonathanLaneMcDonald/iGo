@@ -1,5 +1,44 @@
 
+Apparently, symmetries aren't a thing. 
+So don't use symmetries this time.
+
 Todo:
+	?) maybe i could just have kind of a relaxed attitude toward all this... like my training regime might look something like this:
+		1) whenever doing self-play, write/append the games into a file titled something like "self-play games YYYYMMDD"
+		2) at midnight, stop doing self-play and update the current strongest model by:
+			I) figuring out how many moves were generated in the new self-play dataset
+			II) uniformly sampling that number of moves from the most recent million moves of self-play and training with sgd, momentum = 0.9, and batch size = 256 like in the KataGo paper.
+			III) save a checkpoint for the updated model and play it against the current strongest model to see if there will be any usurpation...
+			IV) basically continue like this indefinitely
+		3) probably want to instantiate that resignation threshold. if a player notices that his best shot is < 5%, then he passes. if his opponent notices that his parent has < 5% and has resigned, then the current player accepts the resignation and the game is recorded and we move on.
+
+
+
+	1) write a class to handle sampling from saved game data.
+		this will
+			ingest data files
+			reconstruct individual games
+			generate individual data frames based on the model's input and output
+			maybe even satisfy keras's definition of a fit_generator at some point. I'm happy to just produce arrays right now.
+
+
+
+
+	1) set up a policy interface and implement three main policies:
+		1) a random policy that just uniformly samples legal moves
+		2) a vanilla_mcts policy that just does a specified number of rollouts per move
+		3) a model-based policy that returns both policy and value
+	
+	2) these models will play against one another in a tournament
+		random will anchor everything
+		the mcts one will be way better than that...
+		and the model one should just wipe out everything else!
+
+
+
+
+
+
 	1) big thing is get a version of this where i can run it in a few concurrent processes on the big machine so i can build a dataset
 		while that's going, i can look into getting dl4j working in general and then working with keras models
 			then while that's going, i can be working on streamlining the self-play and evaluation algorithms
@@ -38,19 +77,6 @@ Todo:
 	6) try and figure out how to load keras models in java as this is probably the easiest way to initiate the training feedback loop
 	7) train the current and next architectures in parallel and switch over when the larger one is able to beat the smaller one like 2/3 of the time or something similarly overwhelming
 
-Task:
-	Training Schedule
-
-			So I'll do the following:
-				2) play with a random number of rollouts sampled from 2^{normal(mu=6, sigma=2)}
-					i feel like having a random number of rollouts basically makes the policy smarter or dumber
-					this will hopefully lead to more variability in gameplay and the model will be able to learn to resolve a larger variety of states
-				
-				4) once i'm training with a model, i'll retrain after every new batch of 100,000 moves.
-					i'll have a window of maybe a million moves (maybe 10M?)
-					models are expensive, so i'll pad my data by generating symmetries. this way, i'll only have to generate 12,500 samples per training/retraining cycle
-					i'll save one model checkpoint per training cycle
-					i'll have the latest checkpoint face off against the strongest model in a simple-majority wins competition for strongest model
 
 Task:
 	General Training Outline:
@@ -80,7 +106,7 @@ Task:
 							6) take a weighted random sample from the top 3 moves for each of the first {boardSize} moves
 
 						training inputs and objectives
-							7) train a model by uniformly sampling the last 100,000 games (before accounting for symmetries)
+							7) train a model by uniformly sampling the last 100,000 games
 							8) training inputs (5 channels currentState(black, white)+previousState(black,white)+playerToMove)
 							9) training objectives (one-hot policy, regression utility, ternary tromp-taylor score (black, white, neutral))						
 						
@@ -90,7 +116,7 @@ Task:
 		Training Loop:
 			1) load a policy (vanilla mcts or model checkpoint)
 			2) play the required number of games under the required conditions, save training samples, update logs
-			3) train the current model (on k training samples) by uniformly sampling the last n games -- always sampling symmetries
+			3) train the current model (on k training samples) by uniformly sampling the last n games
 			4) save the model checkpoint and do a tournament against the current strongest policy to see if the new checkpoint should replace it
 			5) update logs
 			6) go to step 1
