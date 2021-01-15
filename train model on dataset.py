@@ -1,78 +1,121 @@
 
+import numpy as np
+from numpy.random import random, choice
+
 from keras.models import Model, load_model, save_model
 from keras.layers import Input, Conv2D, GlobalAveragePooling2D
-from keras.layers import BatchNormalization, Add, Activation
-from keras.optimizers import SGD
+from keras.layers import BatchNormalization, Add, Activation, Flatten, Dense
+from keras.optimizers import Adam, SGD
 
-def build_iGo_model(filters, blocks, input_shape):
+
+def build_iGo_model(filters, blocks, input_shape, policy_space):
+	"""
+	model architecture:
+		inputs:
+			channel 1:	location is on board
+			channel 2:	current state (black)
+			channel 3:	current state (white)
+			channel 4:	previous state (black)
+			channel 5:	previous state (white)
+			channel 6:	player to move
+
+		outputs:
+			policy
+			value
+	"""
 
 	inputs = Input(shape=input_shape)
+	x = inputs
 
-	x = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(inputs)
-	x = BatchNormalization()(x)
-
-	for _ in range(blocks):
-		y = Activation('relu')(x)
+	for b in range(blocks):
+		y = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(x)
 		y = BatchNormalization()(y)
-		y = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(y)
-
 		y = Activation('relu')(y)
-		y = BatchNormalization()(y)
+
 		y = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(y)
+		y = BatchNormalization()(y)
 
-		x = Add()([x,y])
+		if b:		x = Add()([x,y])
+		else:		x = y
 
-	x = Activation('relu')(x)
-	x = BatchNormalization()(x)
+		x = Activation('relu')(x)
 
-	policy = Conv2D(filters=1, kernel_size=(1, 1), padding='same', activation='sigmoid', name='policy')(x)
+	policy_head = Conv2D(filters=2, kernel_size=(1, 1), padding='same')(x)
+	policy_head = BatchNormalization()(policy_head)
+	policy_head = Activation('relu')(policy_head)
+	policy_head = Flatten()(policy_head)
+	policy = Dense(policy_space, activation='softmax', name='policy')(policy_head)
 
-	territory = Conv2D(filters=1, kernel_size=(1, 1), padding='same', activation='tanh', name='territory')(x)
+	value_head = Conv2D(filters=1, kernel_size=(1,1), padding='same')(x)
+	value_head = BatchNormalization()(value_head)
+	value_head = Activation('relu')(value_head)
+	value_head = Flatten()(value_head)
+	value_head = Dense(256, activation='relu')(value_head)
+	value = Dense(1, activation='tanh', name='value')(value_head)
 
-	value = Conv2D(filters=1, kernel_size=(1, 1), padding='same', activation='tanh', name='pre-value')(x)
-	value = GlobalAveragePooling2D(name='value')(value)
-
-	model = Model(inputs=inputs, outputs=[policy, territory, value])
+	model = Model(inputs=inputs, outputs=[policy, value])
 	model.compile(
-		loss={'policy':'categorical_crossentropy', 'territory':'binary_crossentropy', 'value':'mse'},
-		loss_weights={'policy':0.45, 'territory':0.1, 'value':0.45},
-		optimizer=SGD(learning_rate=2e-5, momentum=0.90))
+		loss={'policy':'sparse_categorical_crossentropy', 'value':'mse'},
+		loss_weights={'policy':0.5, 'value':0.5},
+		optimizer=SGD(momentum=0.9),
+		metrics=['accuracy'])
 	model.summary()
 	return model
 
-#model = build_iGo_model(64, 6, (9, 9, 6))
-#exit()
-
-"""
-model architecture:
-	inputs:
-		channel 1:	location is on board
-		channel 2:	current state (black)
-		channel 3:	current state (white)
-		channel 4:	previous state (black)
-		channel 5:	previous state (white)
-		channel 6:	player to move
-
-	outputs:
-		policy
-		value
-"""
 
 class GameState:
-	def __init__(self, board_size, board_state, player_to_move, policy, utility):
-		self.board_size = board_size
+	def __init__(self, board_state, player_to_move, policy, utility):
 		self.board_state = board_state
 		self.player_to_move = player_to_move
 		self.policy = policy
 		self.utility = utility
+
 
 class CompleteGameRecord:
 	def __init__(self, board_size, array_of_game_states):
 		""" from these pieces of information, i should:
 				1) verify that the board size is correct and that all frames are the correct size
 				2) determine the winner of the game and store that information as the game's outcome
-				3) resolve the territory at the end of the game (by doing a random playout until there are no more moves?)
+					(this can be determined as there is either a 1 or a 0 for the likelihood)
+					(do not accept a game unless the outcome is either 1 or 0 as this enables me to...)
+				3) resolve the territory at the end of the game (by doing a random playout until there are no more moves)
+					(but i think i'm going to systematically not care about territory just yet)
+			after these 3 steps, i'll have six input channels:
+				location is on board
+				positions for each player for current and previous board positions
+				player to move
+			and i'll have the output objectives:
+				policy for player to move (per move)
+				end-game territory (global)
+				game outcome (global)
 		"""
+
+		self.valid_game_record = True
+
+		self.board_size = board_size
+		self.board_area = self.board_size**2
+
+		self.game_states = array_of_game_states
+		for state in self.game_states:
+			if len(state.board_state) != self.board_area:
+				self.valid_game_record = False
+
+		self.game_outcome = 0
+		if self.game_states[-1].utility == 1.0 and self.game_states[-1].player_to_move == "W":
+			self.game_outcome = -1
+		elif self.game_states[-1].utility == 0.0 and self.game_states[-1].player_to_move == "B":
+			self.game_outcome = -1
+		elif self.game_states[-1].utility == 1.0 and self.game_states[-1].player_to_move == "B":
+			self.game_outcome = 1
+		elif self.game_states[-1].utility == 0.0 and self.game_states[-1].player_to_move == "W":
+			self.game_outcome = 1
+
+		if self.game_outcome == 0:
+			self.valid_game_record = False
+
+	def isValid(self):
+		return self.valid_game_record
+
 
 def parse(filename):
 	complete_games = []
@@ -84,80 +127,83 @@ def parse(filename):
 				frame_buffer_size, board_state, player_to_move, policy, utility = line.split()
 				if len(frame_stack) == 0:
 					board_size = int(len(board_state)**0.5)
-				frame_stack.append(GameState(board_size, board_state, player_to_move, policy, utility))
+
+				if policy == 'pass':
+					policy = board_size**2
+
+				frame_stack.append(GameState(board_state, player_to_move, int(policy), float(utility)))
 				if int(frame_buffer_size) == 0:
-					print(board_size, line.split())
-					complete_games.append(frame_stack)
+					game_record = CompleteGameRecord(board_size, frame_stack)
+					if game_record.isValid():
+						#print(board_size, line.split())
+						complete_games.append(game_record)
+
 					frame_stack = []
+
 	return complete_games
 
-test = parse('self-play data 20210115 vanilla mcts random rollouts')
-print(len(test))
-exit()
 
-
-
-
-
-def create_dataset(source, samples, for_validation=False, puzzles_for_review=[]):
-	""" Create the training dataset. """
-
-	puzzles = np.zeros((samples, 9, 9, 9), dtype=np.int8)
-	solutions = np.zeros((samples, 9, 9, 9), dtype=np.int8)
+def create_dataset(games, samples, maxSize):
+	features = np.zeros((samples, maxSize, maxSize, 6), dtype=np.int8)
+	policy = np.zeros((samples, 1), dtype=np.int16)
+	value = np.zeros((samples, 1), dtype=np.int8)
 
 	s = 0
-	for puzzle, solution in puzzles_for_review:
-		puzzles[s], solutions[s] = create_random_homomorphism_in_place(puzzle, solution)
-		s += 1
-
-	print('resampled data records:', s)
 	while s < samples:
-		puzzle, solution = create_puzzle_solution_pair(source[int(npr()*len(source))], int(for_validation)+max(0, npr()))
-		puzzles[s] = to_sparse(puzzle)
-		solutions[s] = to_sparse(solution)
-		s += 1
+		selected_game = choice(games)
+		move_number = int(random()*len(selected_game.game_states))
 
-	return puzzles, solutions
+		for r in range(maxSize):
+			for c in range(maxSize):
+				# set up channel 0: whether or not the location is on the board
+				if r < selected_game.board_size and c < selected_game.board_size:
+					features[s][r][c][0] = 1
+
+				# set up channels 1 and 2: positions of black (channel 1) and white stones (channel 2) for the current state
+				if r < selected_game.board_size and c < selected_game.board_size:
+					if selected_game.game_states[move_number].board_state[r*selected_game.board_size+c] == "B":
+						features[s][r][c][1] = 1
+					elif selected_game.game_states[move_number].board_state[r*selected_game.board_size+c] == "W":
+						features[s][r][c][2] = 1
+
+				# set up channels 3 and 4: positions of black (channel 3) and white stones (channel 4) for the previous state
+				if move_number != 0:
+					if r < selected_game.board_size and c < selected_game.board_size:
+						if selected_game.game_states[move_number-1].board_state[r*selected_game.board_size+c] == "B":
+							features[s][r][c][3] = 1
+						elif selected_game.game_states[move_number-1].board_state[r*selected_game.board_size+c] == "W":
+							features[s][r][c][4] = 1
+
+				# set up channel 5: identity of player to move
+				if selected_game.game_states[move_number].player_to_move == "B":
+					features[s][r][c][5] = 1
+
+		# set up the policy
+		policy[s][0] = selected_game.game_states[move_number].policy
+
+		# set up the value
+		value[s][0] = selected_game.game_outcome
+
+		s += 1
+		if s % 1000 == 0:
+			print(s, samples)
+
+	return features, policy, value
 
 
 """ Build a 2d model """
-# model = build_2d_sudoku_model(64, (3, 3), 50)
+model = build_iGo_model(32, 4, (9, 9, 6), 82)
 
-""" Build a 3d model """
-model = build_3d_sudoku_model(32, (3, 3, 3), 50)
+""" Load Training Data """
+games = parse('self-play data 20210115 vanilla mcts random rollouts')
+print(len(games),'games loaded into training set')
 
 """ Training loop """
-batches = 10000
-batch_size = 128
+batches = 128
+batch_size = 256
 samples = batch_size * batches
-resamples = samples // 5
-best_pred_acc = 0
-puzzles_for_review = []
-herstory = {'predictive_acc': [], 'autoregressive_acc': []}
 
 for e in range(1, 1000):
-	puzzles, solutions = create_dataset(solved_puzzles, samples, puzzles_for_review=puzzles_for_review)
-	history = model.fit(puzzles, solutions, batch_size=batch_size, epochs=1, verbose=1)
+	features, policy, value = create_dataset(games, samples, 9)
+	history = model.fit(features, [policy, value], batch_size=batch_size, epochs=1, verbose=1)
 
-	predictions = model.predict(puzzles)
-	puzzles_for_review = get_hardest_n_puzzles_by_mae(puzzles, solutions, predictions, resamples)
-
-	puzzles, solutions = create_dataset(solved_puzzles, 1000, True, [])
-	herstory['predictive_acc'] += [validate_predictions(puzzles, solutions, model)]
-
-	puzzles, solutions = create_dataset(solved_puzzles, 100, True, [])
-	herstory['autoregressive_acc'] += [autoregressive_validation(puzzles, solutions, model)]
-
-	for key, value in history.history.items():
-		if key in herstory:
-			herstory[key] += value
-		else:
-			herstory[key] = value
-
-	for key, value in herstory.items():
-		print(key, ' '.join([str(x)[:6] for x in value]))
-
-	if best_pred_acc < herstory['predictive_acc'][-1]:
-		best_pred_acc = herstory['predictive_acc'][-1]
-		save_model(model, 'sudoku model - one-shot_acc='+str(best_pred_acc)[:6], save_format='h5')
-		print('model saved')
