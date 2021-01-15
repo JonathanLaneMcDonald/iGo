@@ -1,7 +1,10 @@
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -18,20 +21,30 @@ public class Main
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		// mctsSelfPlayTest(7, 1000, 0, 1);
 
-		int[] boardSizes = {7,7,7,7,8,8,8,9,9};
-		datasetGeneratorTest(10000, boardSizes);
+		int[] boardSizes = {7,8,9,10,11,12,13};
+		datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
 	}
 
-	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes)
+	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)
 	{
+		int aggregateBoardArea = Arrays.stream(boardSizes).map(p->p*p).reduce(0, Integer::sum);
+
+		var boardSizeDistribution = new ArrayList<Integer>();
+		for(int size : boardSizes)
+			for(int i = 0; i < aggregateBoardArea/(size*size); i++)
+				boardSizeDistribution.add(size);
+
 		var random = new Random();
 		try {
-			BufferedWriter writer = new BufferedWriter(new FileWriter("training data export test"));
+			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+			LocalDateTime now = LocalDateTime.now();
+
+			BufferedWriter writer = new BufferedWriter(new FileWriter("self-play data "+dtf.format(now)+" "+treePolicy+" "+rolloutPolicy));
 
 			int moves = 0;
 			long startTime = System.nanoTime();
 			for(int game = 1; game < gamesToPlay; game++){
-				var boardSize = boardSizes[random.nextInt(boardSizes.length)];
+				var boardSize = boardSizeDistribution.get(random.nextInt(boardSizeDistribution.size()));
 				var gameRecords = mctsSelfPlayTest(boardSize, boardSize*boardSize, boardSize*boardSize, 1);
 				for(var record : gameRecords)
 					writer.write(record + "\n");
@@ -42,7 +55,7 @@ public class Main
 				var timePerGame = elapsedTime / game;
 				var timePerMove = elapsedTime / moves;
 
-				System.out.println(game + " games played and " + moves + " moves written -- "+" Time/(m,g): ("+timePerMove+","+timePerGame+")");
+				System.out.println("board size " + boardSize + " " + game + " games played and " + moves + " moves written -- "+" Time/(m,g): ("+timePerMove+","+timePerGame+")");
 			}
 			writer.close();
 		}
