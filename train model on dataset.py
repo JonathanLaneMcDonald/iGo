@@ -150,7 +150,7 @@ def create_dataset(games, samples, maxSize):
 
 	s = 0
 	while s < samples:
-		selected_game = choice(games)
+		selected_game = games[int(random()*len(games))]
 		move_number = int(random()*len(selected_game.game_states))
 
 		for r in range(maxSize):
@@ -185,25 +185,27 @@ def create_dataset(games, samples, maxSize):
 		value[s][0] = selected_game.game_outcome
 
 		s += 1
-		if s % 1000 == 0:
+		if s % (1024*8) == 0:
 			print(s, samples)
 
 	return features, policy, value
 
+""" Model Params """
+maxSize = 13
 
 """ Build a 2d model """
-model = build_iGo_model(32, 4, (9, 9, 6), 82)
+model = build_iGo_model(64, 6, (maxSize, maxSize, 6), 1 + maxSize**2)
 
 """ Load Training Data """
 games = parse('self-play data 20210115 vanilla mcts random rollouts')
 print(len(games),'games loaded into training set')
 
 """ Training loop """
-batches = 128
+batches = 256
 batch_size = 256
 samples = batch_size * batches
 
 for e in range(1, 1000):
-	features, policy, value = create_dataset(games, samples, 9)
+	features, policy, value = create_dataset(games, samples, maxSize)
 	history = model.fit(features, [policy, value], batch_size=batch_size, epochs=1, verbose=1)
 
