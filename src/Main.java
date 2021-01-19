@@ -19,11 +19,9 @@ public class Main
 		int boardSize = 9;
 		double komi = 6.5;
 		var stratForBlack = new RandomStrategy(boardSize, komi);
-		var stratForWhite = new RandomStrategy(boardSize, komi);
+		var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 100);
 		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
-
-		for(int i = 0; i < 100; i++)
-			System.out.println(matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi)));
+		System.out.println(matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi)));
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)

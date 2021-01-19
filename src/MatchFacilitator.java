@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 
 public class MatchFacilitator {
@@ -22,6 +24,7 @@ public class MatchFacilitator {
 	{
 		initializeGame(gameConfig.boardSize, gameConfig.komi);
 
+		var game = new iGo(gameConfig.boardSize, gameConfig.komi);
 		int nextToMove = 1;
 		int consecutivePasses = 0;
 		boolean playerResigns = false;
@@ -46,6 +49,9 @@ public class MatchFacilitator {
 				else {
 					consecutivePasses = 0;
 				}
+
+				game.placeStone(nextMove.get(), nextToMove);
+				game.display(new HashSet<>(Collections.singleton(nextMove.get())));
 
 				moves.add(nextMove.get());
 				blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
