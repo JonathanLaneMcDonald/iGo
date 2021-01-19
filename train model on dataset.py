@@ -187,8 +187,6 @@ def create_dataset(games, samples, maxSize, moveHistory):
 		value[s][0] = selected_game.game_outcome
 
 		s += 1
-		if s % (1024*16) == 0:
-			print(s, samples)
 
 	return features, policy, value
 
@@ -214,8 +212,11 @@ inputChannels = 2 + 2*moveHistory
 model = build_iGo_model(filters, residualBlocks, (maxBoardSize, maxBoardSize, inputChannels), 1 + maxBoardSize**2)
 
 """ Load Training Data """
-games = parse('self-play data 20210115 vanilla mcts random rollouts')
+games = parse('self-play data 7,8,9 20210114-9 vanilla mcts random rollouts')
 print(len(games),'games loaded into training set')
+
+""" Speed Test """
+#speed_test(model, games, maxBoardSize, 1000000, 64, moveHistory)
 
 """ Training loop """
 batches = 128
@@ -223,6 +224,8 @@ batch_size = 1024
 samples = batch_size * batches
 
 for e in range(1, 1000):
-	features, policy, value = create_dataset(games, samples, maxSize)
-	history = model.fit(features, [policy, value], batch_size=batch_size, epochs=1, verbose=1)
+	features, policy, value = create_dataset(games, samples, maxBoardSize, moveHistory)
+
+	az_history = model.fit(features, [policy, value], batch_size=batch_size, epochs=1, verbose=1).history
+	model.save('az model loss='+str(az_history['loss'][-1])[:8]+' pacc='+str(az_history['policy_accuracy'][-1])[:8]+' vacc='+str(az_history['value_accuracy'][-1])[:8]+'.h5')
 
