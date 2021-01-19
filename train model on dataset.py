@@ -154,8 +154,8 @@ def parse(filename):
 	return complete_games
 
 
-def create_dataset(games, samples, maxSize):
-	features = np.zeros((samples, maxSize, maxSize, 6), dtype=np.int8)
+def create_dataset(games, samples, maxSize, moveHistory):
+	features = np.zeros((samples, maxSize, maxSize, 2 + 2*moveHistory), dtype=np.int8)
 	policy = np.zeros((samples, 1), dtype=np.int16)
 	value = np.zeros((samples, 1), dtype=np.int8)
 
@@ -166,28 +166,19 @@ def create_dataset(games, samples, maxSize):
 
 		for r in range(maxSize):
 			for c in range(maxSize):
-				# set up channel 0: whether or not the location is on the board
 				if r < selected_game.board_size and c < selected_game.board_size:
 					features[s][r][c][0] = 1
 
-				# set up channels 1 and 2: positions of black (channel 1) and white stones (channel 2) for the current state
-				if r < selected_game.board_size and c < selected_game.board_size:
-					if selected_game.game_states[move_number].board_state[r*selected_game.board_size+c] == "B":
-						features[s][r][c][1] = 1
-					elif selected_game.game_states[move_number].board_state[r*selected_game.board_size+c] == "W":
-						features[s][r][c][2] = 1
+				for t in range(moveHistory):
+					if move_number - t >= 0:
+						if r < selected_game.board_size and c < selected_game.board_size:
+							if selected_game.game_states[move_number-t].board_state[r*selected_game.board_size+c] == "B":
+								features[s][r][c][1+(2*t+0)] = 1
+							elif selected_game.game_states[move_number-t].board_state[r*selected_game.board_size+c] == "W":
+								features[s][r][c][1+(2*t+1)] = 1
 
-				# set up channels 3 and 4: positions of black (channel 3) and white stones (channel 4) for the previous state
-				if move_number != 0:
-					if r < selected_game.board_size and c < selected_game.board_size:
-						if selected_game.game_states[move_number-1].board_state[r*selected_game.board_size+c] == "B":
-							features[s][r][c][3] = 1
-						elif selected_game.game_states[move_number-1].board_state[r*selected_game.board_size+c] == "W":
-							features[s][r][c][4] = 1
-
-				# set up channel 5: identity of player to move
 				if selected_game.game_states[move_number].player_to_move == "B":
-					features[s][r][c][5] = 1
+					features[s][r][c][2 + 2*moveHistory - 1] = 1
 
 		# set up the policy
 		policy[s][0] = selected_game.game_states[move_number].policy
@@ -202,10 +193,15 @@ def create_dataset(games, samples, maxSize):
 	return features, policy, value
 
 """ Model Params """
-maxSize = 9
+moveHistory = 1
+
+filters = 32
+residualBlocks = 4
+maxBoardSize = 9
 
 """ Build a 2d model """
-model = build_iGo_model(64, 6, (maxSize, maxSize, 6), 1 + maxSize**2)
+inputChannels = 2 + 2*moveHistory
+model = build_iGo_model(filters, residualBlocks, (maxBoardSize, maxBoardSize, inputChannels), 1 + maxBoardSize**2)
 
 """ Load Training Data """
 games = parse('self-play data 20210115 vanilla mcts random rollouts')
