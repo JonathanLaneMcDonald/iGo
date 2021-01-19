@@ -5,26 +5,24 @@ from numpy.random import random, choice
 from keras.models import Model, load_model, save_model
 from keras.layers import Input, Conv2D, GlobalAveragePooling2D
 from keras.layers import BatchNormalization, Add, Activation, Flatten, Dense
-from keras.optimizers import Adam, SGD
-
+from keras.optimizers import SGD
 
 def build_iGo_model(filters, blocks, input_shape, policy_space):
-	"""
+    
+    """
 	model architecture:
 		inputs:
-			channel 1:	location is on board
-			channel 2:	current state (black)
-			channel 3:	current state (white)
-			channel 4:	previous state (black)
-			channel 5:	previous state (white)
-			channel 6:	player to move
+			channel 0:	        whether or not the location is on the board (to accommodate different board sizes)
+            channel 1 + 2k+0:   black stones for kth position on the game state stack
+            channel 1 + 2k+1:   white stones for kth position on the game state stack
+			channel n-1:	    player to move
 
 		outputs:
 			policy
 			value
 	"""
-
-	inputs = Input(shape=input_shape)
+	
+    inputs = Input(shape=input_shape)
 	x = inputs
 
 	for b in range(blocks):
@@ -57,7 +55,7 @@ def build_iGo_model(filters, blocks, input_shape, policy_space):
 	model.compile(
 		loss={'policy':'sparse_categorical_crossentropy', 'value':'mse'},
 		loss_weights={'policy':0.5, 'value':0.5},
-		optimizer=SGD(momentum=0.9),
+		optimizer=SGD(learning_rate=0.01, momentum=0.90),
 		metrics=['accuracy'])
 	model.summary()
 	return model
