@@ -192,6 +192,16 @@ def create_dataset(games, samples, maxSize, moveHistory):
 
 	return features, policy, value
 
+import time
+
+def speed_test(model, games, maxSize, iterations, batchSize, moveHistory):
+	start_time = time.time()
+	for i in range(1, iterations):
+		features, policy, value = create_dataset(games, batchSize, maxSize, moveHistory)
+		policy, value = model.predict(features)
+		if i % 10 == 0:
+			print(time.time()-start_time, i*batchSize, (i*batchSize)/(time.time()-start_time))
+
 """ Model Params """
 moveHistory = 1
 
