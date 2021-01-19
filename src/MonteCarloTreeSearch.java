@@ -84,7 +84,7 @@ public class MonteCarloTreeSearch {
 	public boolean nextPlayerChanceToWinExceeds(int minSimulations, double chanceToWin)
 	{
 		if(currentRoot.totalSimulations >= minSimulations)
-			return ((double)currentRoot.totalVictories/currentRoot.totalSimulations) > chanceToWin;
+			return ((double)currentRoot.totalVictories/currentRoot.totalSimulations) >= chanceToWin;
 		return true;
 	}
 
@@ -96,19 +96,28 @@ public class MonteCarloTreeSearch {
 	public int getWeightedRandomStrongestMoveFromTopK(int k)
 	{
 		var movesByStrength = currentRoot.children.stream().map(child -> new Tuple<Integer, Integer>(child.totalSimulations, child.move)).sorted((move1, move2) -> move2.first - move1.first).collect(Collectors.toList());
-		var weightedCandidates = movesByStrength.stream().limit(k).collect(Collectors.toList());
+		var weightedCandidates = movesByStrength.stream().filter(tup -> tup.second != area).limit(k).collect(Collectors.toList());
 
-		int sumOfSimulations = weightedCandidates.stream().map(p -> p.first).reduce(0, Integer::sum);
-		int selection = random.nextInt(sumOfSimulations);
+		if(weightedCandidates.size() == 0)
+			return area;
+		else {
+			int sumOfSimulations = weightedCandidates.stream().map(p -> p.first).reduce(0, Integer::sum);
+			if(sumOfSimulations == 0) {
+				var simMoveTuple = weightedCandidates.get(random.nextInt(weightedCandidates.size()));
+				return simMoveTuple.second;
+			}
+			else {
+				int selection = random.nextInt(sumOfSimulations);
 
-		int candidate = 0;
-		int sumSeen = weightedCandidates.get(candidate).first;
-		while(sumSeen < selection)
-		{
-			candidate ++;
-			sumSeen += weightedCandidates.get(candidate).first;
+				int candidate = 0;
+				int sumSeen = weightedCandidates.get(candidate).first;
+				while (sumSeen < selection) {
+					candidate++;
+					sumSeen += weightedCandidates.get(candidate).first;
+				}
+				return weightedCandidates.get(candidate).second;
+			}
 		}
-		return weightedCandidates.get(candidate).second;
 	}
 
 	// boolean of whether the move could be completed
