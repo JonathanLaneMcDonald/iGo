@@ -16,7 +16,82 @@ Todo:
 		For example, both the random agent and the vanilla mcts agent (with 100 rollouts) passed on this board. 
 		There's clearly a black group that can be captured, so there may be a bug in my "get sensible moves" function.
 		A bug in this function predicts that I should find the same thing in my random rollouts, too, so I can write a test for that.
+	
+		 O  O  O  -  O  O  - 
+		 O  O  O  O  O  -  O 
+		 O  O  -  O  -  O  O 
+		 O (-) O  O  O  O  X 
+		 X  X  X  O  -  O (-)
+		 O  O  O  -  O  O  O 
+		 O  -  O  O  -  O  O 
 
+		Above is a list of unsimulated moves
+		White to move. The sum of simulations across the highlighted positions was zero. What the hell? The moves seem to be recognized as legal or "sensible" because that's how they got in the tree, but why aren't they being simulated? They seem like pretty good moves.
+		
+		This also is a consistent predictor of errors in the match facilitator
+		
+		 O  O  O  -  O  O  - 
+		 O  O  O  O  O  -  O 
+		 O  O  -  O  -  O  O 
+		 O (-) O  O  O  O  X 
+		 X  X  X  O  -  O (-)
+		 O  O  O  -  O  O  O 
+		 O  -  O  O  -  O  O 
+
+		Above is a list of unsimulated moves
+		 O  O  O  -  O  O  - 
+		 O  O  O  O  O  -  O 
+		 O  O  -  O  -  O  O 
+		 O (O) O  O  O  O  X 
+		 -  -  -  O  -  O  - 
+		 O  O  O  -  O  O  O 
+		 O  -  O  O  -  O  O 
+
+		 O  O  O  -  O  O  - 
+		 O  O  O  O  O  -  O 
+		 O  O  -  O  -  O  O 
+		 O  O  O  O  O  O  X 
+		 - (X) -  O  -  O  - 
+		 O  O  O  -  O  O  O 
+		 O  -  O  O  -  O  O 
+
+		Error in move
+
+		So what's going on? Why isn't the game state keeping up with these positions if they're legal positions? Why aren't they being simulated?
+		
+		In at least one case, the node with no simulations has noise = NaN which probably makes the search probability zero for that node, which probably means it isn't expanded either...
+		ayep, I'm finding more examples of this now that I'm looking around... so this may have more to do with the noise generation function at node expansion. I'll have a look there.
+		
+		okay, i figured it out...
+			
+			It has to do with how I generate noise to promote exploration.
+			
+			1) When I expand nodes, I generate noise from a gaussian distribution and then normalize it to promote exploration of new moves.
+			2) When there's a small number of moves available, there's a non-negligible chance that the function I *was* using (Math.max(0, random.nextGaussian());) produces all zeros
+			3) This means when I add this noise to the individual nodes using (leaf.children.add(new Node(leaf, move, -leaf.player, noise.pop()/sumOfNoise));), I can get divide by zero errors
+			4) But Java helpfully produces Doubles with a value of "NaN"
+			5) This NaN value drives the search likelihood to zero when I'm exploring my tree, so the node has zero simulations
+			6) The zero simulation thing was giving me a problem, too, but when the opponent played at unvisited nodes, it was causing other errors that I'll still have to resolve...
+			7) In the end, it appeared as though these were errors relating to sensible move generation because the error was most likely to occur at the end-game which correlates with remaining moves just involving lots of captures and stuff, so it appeared as though I was having more trouble with my simulation apparatus...
+			Solution:
+				Add a tiny term to avoid dividing by zero. Add it in the denominator to be extra clear what I'm doing.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	Bug:
+		The noise I add to my policy is sometimes NaN, so that's not right...
 
 
 

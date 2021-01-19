@@ -255,7 +255,7 @@ public class MonteCarloTreeSearch {
 		}
 
 		for(var move : sensibleMoves)
-			leaf.children.add(new Node(leaf, move, -leaf.player, noise.pop()/sumOfNoise));
+			leaf.children.add(new Node(leaf, move, -leaf.player, noise.pop()/(sumOfNoise + 1e-6)));
 
 		// and, finally, add the "pass" move which is always legal
 		leaf.children.add(new Node(leaf, area, -leaf.player, 0));
