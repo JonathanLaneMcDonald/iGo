@@ -21,7 +21,7 @@ public class Main
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		// mctsSelfPlayTest(7, 1000, 0, 1);
 
-		int[] boardSizes = {7,8,9,10,11,12,13};
+		int[] boardSizes = {7,8,9};
 		datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
 	}
 
@@ -45,7 +45,8 @@ public class Main
 			long startTime = System.nanoTime();
 			for(int game = 1; game < gamesToPlay; game++){
 				var boardSize = boardSizeDistribution.get(random.nextInt(boardSizeDistribution.size()));
-				var gameRecords = mctsSelfPlayTest(boardSize, boardSize*boardSize, boardSize*boardSize, 1);
+				var numRollouts = boardSize*boardSize;
+				var gameRecords = mctsSelfPlayTest(boardSize, numRollouts, numRollouts, 1);
 				for(var record : gameRecords)
 					writer.write(record + "\n");
 				writer.flush();
@@ -71,7 +72,8 @@ public class Main
 
 		int consecutivePasses = 0;
 		int moveNumber = 0;
-		while(consecutivePasses < 2 && moveNumber < policy.area*3) {
+		boolean playerResignation = false;
+		while(consecutivePasses < 2 && moveNumber < policy.area*3 && !playerResignation) {
 
 			moveNumber ++;
 
@@ -88,7 +90,11 @@ public class Main
 			else {
 				consecutivePasses = 0;
 			}
-			policy.doMove(strongestMove);
+
+			if(!policy.nextPlayerChanceToWinExceeds(20, 0.05))
+				playerResignation = true;
+			else
+				policy.doMove(strongestMove);
 			//policy.displayBoard();
 		}
 

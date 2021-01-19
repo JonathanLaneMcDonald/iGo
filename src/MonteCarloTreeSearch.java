@@ -81,6 +81,13 @@ public class MonteCarloTreeSearch {
 		currentRoot = root;
 	}
 
+	public boolean nextPlayerChanceToWinExceeds(int minSimulations, double chanceToWin)
+	{
+		if(currentRoot.totalSimulations >= minSimulations)
+			return ((double)currentRoot.totalVictories/currentRoot.totalSimulations) > chanceToWin;
+		return true;
+	}
+
 	public int getNextPlayerToMove()
 	{
 		return -currentRoot.player;
