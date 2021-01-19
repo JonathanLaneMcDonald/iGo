@@ -3,116 +3,25 @@ Apparently, symmetries aren't a thing.
 So don't use symmetries this time.
 
 Todo:
-	training method:
-		i think i don't care that much about specifics at the moment. it looks like i'll be able to generate on the order of 100,000 training samples per day on a 9x9 board.
-		if that's the case, then i'm happy to just:
-			generate self-play data through midnight, then 
-			train the current model on 128 batches of 1024 samples, then
-			do a quick and easy tournament of like 200 games with no look ahead and, say, weighted random sampling with a temperature uniformly decreasing across boardArea moves
-				simple majority winner is tomorrow's policy network
-		and just keep that going for a while...
-		and maybe on the cpu, have an ongoing tournament between all the models so far to figure out more precisely how strong they are and all that
+
+	Bug:
+		I'm pretty sure I have a bug where the iGo class isn't recognizing things as "sensible moves" when there's just a single liberty. specifically, I've seen the following a few times:
+		 O  -  O  -  O  O  O 
+		 O  O  O  O  O  O  - 
+		 O  -  O  O  O  O  O 
+		 O  O  -  O  O  -  O 
+		 O  O  O  O  -  O  O 
+		 O  O  O  X  X  O  O 
+		 O  -  O  O  O  -  O 		
+		For example, both the random agent and the vanilla mcts agent (with 100 rollouts) passed on this board. 
+		There's clearly a black group that can be captured, so there may be a bug in my "get sensible moves" function.
+		A bug in this function predicts that I should find the same thing in my random rollouts, too, so I can write a test for that.
 
 
 
 
 
-	1) set up a policy interface and implement three main policies:
-		1) a random policy that just uniformly samples legal moves
-		2) a vanilla_mcts policy that just does a specified number of rollouts per move
-		3) a model-based policy that returns both policy and value
-	
-	2) these models will play against one another in a tournament
-		random will anchor everything
-		the mcts one will be way better than that...
-		and the model one should just wipe out everything else!
-
-
-
-
-
-
-	1) big thing is get a version of this where i can run it in a few concurrent processes on the big machine so i can build a dataset
-		while that's going, i can look into getting dl4j working in general and then working with keras models
-			then while that's going, i can be working on streamlining the self-play and evaluation algorithms
-			
-			at which point, i'm perfectly happy to just let it run in a single thread for a while and come back occasionally to look at some pretty graphs and maybe challenge myself
-	
-		then i might look into scaling it up to the full range of board sizes 9 through 19 sampling in roughly the way i am now
-		at that rate, i wonder if i'd be able to keep up with its growth on a 9x9 or a 13x13 or a 19x19... that'll be really interesting to see
-		
-		of course, i'll need to make a play interface so i can actually do all that in an interactive way... what features will my gui have?
-	
-	2) the match facilitator class will probably take a "match configuration" describing either a tournament to determine the strongest model or self-play to generate training data
-		the match facilitator will probably write directly to log files and return a "match result"...? maybe lol
-	
-	
-	
-
-	4) go ahead and write something in python that can train on these data and see how we go
-		pretty sure i'm at the point now where i can begin fitting a model...
-	
 	5) try and figure out how to install dl4j and load/do inference with a keras model trained in python
-
-
-
-	1) add a resignation threshold of 5% like they did with alphago. that should save some time.
-		make it so you can just add a parameter that'll increase the likelihood of passing if the utility function sucks
-	
-	2) put together a class that can run games where each player uses different strategies
-		such a class can be used to generate training data and can be used to figure out relative strength between one policy and another
-
-	5) run multiple instances of this on the big computer to generate lots of training data to get a model started
-
-	
-	that should really be enough for today!
-	
-	6) try and figure out how to load keras models in java as this is probably the easiest way to initiate the training feedback loop
-	7) train the current and next architectures in parallel and switch over when the larger one is able to beat the smaller one like 2/3 of the time or something similarly overwhelming
-
-
-Task:
-	General Training Outline:
-
-		Initialize Training:
-			Assumptions:
-				I have a root directory to work from, but
-				I have no training data and no trained models
-				I only have the rules of the game and a generic policy augmentation algorithm (mcts)
-			
-			Actions:
-				I create some empty log files like this:
-					1) log file describing the current state of the training data (where a particular file is, when it was created, and what method/model was used to create it)
-					2) log file describing the current state of my "model zoo" (when models were created and what data they've been trained on (saved once per checkpoint))
-					3) log file describing tournaments between models including win/loss rates and when a new models is selected to be the "strongest model"
-				Copy over a training schedule, for example:
-					One training cycle consists of:
-						1) selecting a policy model - if no trained model is available, default to vanilla mcts
-						2) 	if using vanilla mcts, then play through 12,500 games per checkpoint,
-							else if a model is available, play through 1250 games per checkpoint
-						3) 	if using vanilla mcts, then sample games from the distribution {7,8,9} in inverse proportion to board area,
-							else if a model is available, then samples games from the distribution {9,10,11,12,13,14,15,16,17,18,19} in inverse proportion to board size
-
-						encouraging variability in gameplay
-							4) komi is set on a per game basis according to 6.5+int(normal(0,1)), but we play with 6.5 -- this way, we hopefully don't train the model to just eek out a narrow victory
-							5) the number of playouts is sampled from the distribution 2^{normal(mu=7, sigma=1)}
-							6) take a weighted random sample from the top 3 moves for each of the first {boardSize} moves
-
-						training inputs and objectives
-							7) train a model by uniformly sampling the last 100,000 games
-							8) training inputs (5 channels currentState(black, white)+previousState(black,white)+playerToMove)
-							9) training objectives (one-hot policy, regression utility, ternary tromp-taylor score (black, white, neutral))						
-						
-						
-				I initiate the training loop
-		
-		Training Loop:
-			1) load a policy (vanilla mcts or model checkpoint)
-			2) play the required number of games under the required conditions, save training samples, update logs
-			3) train the current model (on k training samples) by uniformly sampling the last n games
-			4) save the model checkpoint and do a tournament against the current strongest policy to see if the new checkpoint should replace it
-			5) update logs
-			6) go to step 1
 
 
 
