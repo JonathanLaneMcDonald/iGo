@@ -21,7 +21,7 @@ public class RandomStrategy implements Strategy{
 		var sensibleMoves = game.getSensibleMovesForPlayer(player);
 
 		if(sensibleMoves.isEmpty())
-			return Optional.empty();
+			return Optional.of(game.getArea());
 		else
 			return Optional.of(sensibleMoves.get(random.nextInt(sensibleMoves.size())));
 	}
