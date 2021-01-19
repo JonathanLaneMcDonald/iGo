@@ -119,6 +119,10 @@ def parse(filename):
 	complete_games = []
 	frame_stack = []
 	board_size = 0
+
+	frames_loaded = 0
+	frames_discharged = 0
+	unique_games = set()
 	with open(filename,'r') as f:
 		for line in f:
 			if len(line.split()) == 5:
@@ -132,11 +136,17 @@ def parse(filename):
 				frame_stack.append(GameState(board_state, player_to_move, int(policy), float(utility)))
 				if int(frame_buffer_size) == 0:
 					game_record = CompleteGameRecord(board_size, frame_stack)
+					while len(game_record.game_states) and not (0.05 <= game_record.game_states[-1].utility <= 0.95):
+						frames_discharged += 1
+						game_record.game_states.pop()
 					if game_record.isValid():
-						#print(board_size, line.split())
+						unique_games.add(game_record.gameAsPolicyString(20))
+						frames_loaded += len(game_record.game_states)
 						complete_games.append(game_record)
 
 					frame_stack = []
+
+	print(len(complete_games),'complete games loaded\n', frames_loaded, 'frames loaded\n', frames_discharged, 'frames discharged\n', len(unique_games),'unique games played')
 
 	return complete_games
 
