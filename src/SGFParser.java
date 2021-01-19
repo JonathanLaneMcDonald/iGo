@@ -45,6 +45,21 @@ public class SGFParser
 		return new Move(r, c, side);
 	}
 
+	public static String movesToSGF(ArrayList<Integer> moves, int boardSize)
+	{
+		var sgfMoves = new StringBuilder("");
+
+		for(int i = 0; i < moves.size(); i++) {
+			sgfMoves.append((char)(97 + (moves.get(i)/boardSize)));
+			sgfMoves.append((char)(97 + (moves.get(i)%boardSize)));
+
+			if(i < moves.size()-1)
+				sgfMoves.append(',');
+		}
+
+		return sgfMoves.toString();
+	}
+
 	public List<Move> getNextMoveSet()
 	{
 		String line;

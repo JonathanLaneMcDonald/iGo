@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class MatchFacilitator {
@@ -17,16 +18,15 @@ public class MatchFacilitator {
 		whiteStrategy.initializeGame(boardSize, komi);
 	}
 
-	public void facilitateGame(GameConfiguration gameConfig)
+	public String facilitateGame(GameConfiguration gameConfig)
 	{
 		initializeGame(gameConfig.boardSize, gameConfig.komi);
 
-		var game = new iGo(gameConfig.boardSize, gameConfig.komi);
 		int nextToMove = 1;
-		int moveNumber = 0;
 		int consecutivePasses = 0;
 		boolean playerResigns = false;
-		while(consecutivePasses < 2 && moveNumber < gameConfig.maxMoves && !playerResigns) {
+		var moves = new ArrayList<Integer>();
+		while(consecutivePasses < 2 && moves.size() < gameConfig.maxMoves && !playerResigns) {
 
 			Optional<Integer> nextMove;
 			if (nextToMove == 1) {
@@ -47,15 +47,14 @@ public class MatchFacilitator {
 					consecutivePasses = 0;
 				}
 
-				game.placeStone(nextMove.get(), nextToMove);
+				moves.add(nextMove.get());
 				blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
 				whiteStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
 
-				moveNumber ++;
 				nextToMove = -nextToMove;
-
-				game.displayGroupsAndOwnership();
 			}
 		}
+
+		return gameConfig.boardSize + " " + gameConfig.komi + " " + SGFParser.movesToSGF(moves, gameConfig.boardSize);
 	}
 }

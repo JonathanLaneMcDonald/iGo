@@ -21,7 +21,9 @@ public class Main
 		var stratForBlack = new RandomStrategy(boardSize, komi);
 		var stratForWhite = new RandomStrategy(boardSize, komi);
 		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
-		matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi));
+
+		for(int i = 0; i < 100; i++)
+			System.out.println(matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi)));
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)
