@@ -99,20 +99,23 @@ class CompleteGameRecord:
 				self.valid_game_record = False
 
 		self.game_outcome = 0
-		if self.game_states[-1].utility == 1.0 and self.game_states[-1].player_to_move == "W":
+		if self.game_states[-1].utility >= 0.95 and self.game_states[-1].player_to_move == "W":
 			self.game_outcome = -1
-		elif self.game_states[-1].utility == 0.0 and self.game_states[-1].player_to_move == "B":
+		elif self.game_states[-1].utility <= 0.05 and self.game_states[-1].player_to_move == "B":
 			self.game_outcome = -1
-		elif self.game_states[-1].utility == 1.0 and self.game_states[-1].player_to_move == "B":
+		elif self.game_states[-1].utility >= 0.95 and self.game_states[-1].player_to_move == "B":
 			self.game_outcome = 1
-		elif self.game_states[-1].utility == 0.0 and self.game_states[-1].player_to_move == "W":
+		elif self.game_states[-1].utility <= 0.05 and self.game_states[-1].player_to_move == "W":
 			self.game_outcome = 1
 
 		if self.game_outcome == 0:
 			self.valid_game_record = False
 
 	def isValid(self):
-		return self.valid_game_record
+		return self.valid_game_record and len(self.game_states)
+	
+	def gameAsPolicyString(self, first_k_moves):
+		return ' '.join([str(x.policy) for x in self.game_states[:first_k_moves]])
 
 
 def parse(filename):
