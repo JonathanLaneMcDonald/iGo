@@ -57,6 +57,9 @@ public class MonteCarloTreeSearch {
 	int nodesExpanded;
 	int simulationErrors;
 
+	int recurseDepth;
+	int maxRecurseDepth;
+
 	Random random;
 	double noiseWeight;
 
@@ -74,6 +77,7 @@ public class MonteCarloTreeSearch {
 
 		nodesExpanded = 0;
 		simulationErrors = 0;
+		maxRecurseDepth = 20;
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
 		root = new Node(null, -1, -1, 0);
@@ -234,13 +238,16 @@ public class MonteCarloTreeSearch {
 
 	private Node recurseToAndExpandLeaf(Node currentNode)
 	{
+		recurseDepth = 0;
 		var leaf = recurseToLeaf(currentNode);
-		expandAllForNode(leaf);
+		if(recurseDepth < maxRecurseDepth)
+			expandAllForNode(leaf);
 		return leaf;
 	}
 
 	private Node recurseToLeaf(Node searchNode)
 	{
+		recurseDepth ++;
 		var nextSearchNode = getMostVisitableChildNode(searchNode);
 		if(nextSearchNode.isPresent())
 			return recurseToLeaf(nextSearchNode.get());
