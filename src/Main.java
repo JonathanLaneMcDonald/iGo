@@ -21,7 +21,21 @@ public class Main
 		var stratForBlack = new RandomStrategy(boardSize, komi);
 		var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 100);
 		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
-		System.out.println(matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi)));
+
+		int totalGames = 0;
+		int blackWins = 0;
+		int whiteWins = 0;
+		for(int i = 0; i < 400; i++) {
+			var result = matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi));
+
+			totalGames ++;
+			if(result == 1)
+				blackWins ++;
+			else
+				whiteWins ++;
+
+			System.out.println("Total Games:"+totalGames+" Black/White:" + blackWins + "/" + whiteWins);
+		}
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)

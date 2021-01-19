@@ -20,7 +20,7 @@ public class MatchFacilitator {
 		whiteStrategy.initializeGame(boardSize, komi);
 	}
 
-	public String facilitateGame(GameConfiguration gameConfig)
+	public int facilitateGame(GameConfiguration gameConfig)
 	{
 		initializeGame(gameConfig.boardSize, gameConfig.komi);
 
@@ -51,7 +51,7 @@ public class MatchFacilitator {
 				}
 
 				game.placeStone(nextMove.get(), nextToMove);
-				game.display(new HashSet<>(Collections.singleton(nextMove.get())));
+				//game.display(new HashSet<>(Collections.singleton(nextMove.get())));
 
 				moves.add(nextMove.get());
 				blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
@@ -61,6 +61,11 @@ public class MatchFacilitator {
 			}
 		}
 
-		return gameConfig.boardSize + " " + gameConfig.komi + " " + SGFParser.movesToSGF(moves, gameConfig.boardSize);
+		//return gameConfig.boardSize + " " + gameConfig.komi + " " + SGFParser.movesToSGF(moves, gameConfig.boardSize);
+
+		if(game.getSimpleTerminalScore() < 0)
+			return -1;
+		else
+			return 1;
 	}
 }
