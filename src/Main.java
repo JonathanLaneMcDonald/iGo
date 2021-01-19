@@ -13,20 +13,15 @@ public class Main
 
 	public static void main(String[] args)
 	{
-		//simulationSpeedTest("res\\compliant kgs games",19);
-
-		//randomSamplerTest(100000, 9);
-
-		// some have included dirichlet noise to the PUCT function, too, so maybe add a term for that
-		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
-		// mctsSelfPlayTest(7, 1000, 0, 1);
-
 		//int[] boardSizes = {7,8,9};
 		//datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
 
-		var stratForBlack = new RandomStrategy(9, 6.5);
-		var stratForWhite = new RandomStrategy(9, 6.5);
+		int boardSize = 9;
+		double komi = 6.5;
+		var stratForBlack = new RandomStrategy(boardSize, komi);
+		var stratForWhite = new RandomStrategy(boardSize, komi);
 		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
+		matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi));
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)

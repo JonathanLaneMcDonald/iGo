@@ -1,3 +1,4 @@
+import java.util.Optional;
 import java.util.Random;
 
 public class RandomStrategy implements Strategy{
@@ -16,9 +17,13 @@ public class RandomStrategy implements Strategy{
 	}
 
 	@Override
-	public int getNextMove(int player) {
+	public Optional<Integer> getNextMove(int player) {
 		var sensibleMoves = game.getSensibleMovesForPlayer(player);
-		return sensibleMoves.get(random.nextInt(sensibleMoves.size()));
+
+		if(sensibleMoves.isEmpty())
+			return Optional.empty();
+		else
+			return Optional.of(sensibleMoves.get(random.nextInt(sensibleMoves.size())));
 	}
 
 	@Override

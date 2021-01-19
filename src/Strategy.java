@@ -1,3 +1,5 @@
+import java.util.Optional;
+
 public interface Strategy {
 	/*
 	There are many examples of Strategy implementations:
@@ -17,7 +19,7 @@ public interface Strategy {
 
 	void initializeGame(int boardSize, double komi);
 
-	int getNextMove(int player);
+	Optional<Integer> getNextMove(int player);
 
 	// it's boolean so we can return if the move failed, which would indicate the boards are out of sync
 	boolean applyMoveForPlayer(int move, int player);
