@@ -50,9 +50,12 @@ public class SGFParser
 		var sgfMoves = new StringBuilder("");
 
 		for(int i = 0; i < moves.size(); i++) {
-			sgfMoves.append((char)(97 + (moves.get(i)/boardSize)));
-			sgfMoves.append((char)(97 + (moves.get(i)%boardSize)));
-
+			if(moves.get(i) == boardSize*boardSize)
+				sgfMoves.append("pass");
+			else {
+				sgfMoves.append((char) (97 + (moves.get(i) / boardSize)));
+				sgfMoves.append((char) (97 + (moves.get(i) % boardSize)));
+			}
 			if(i < moves.size()-1)
 				sgfMoves.append(',');
 		}
