@@ -21,8 +21,12 @@ public class Main
 		// https://stats.stackexchange.com/questions/322831/purpose-of-dirichlet-noise-in-the-alphazero-paper
 		// mctsSelfPlayTest(7, 1000, 0, 1);
 
-		int[] boardSizes = {7,8,9};
-		datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
+		//int[] boardSizes = {7,8,9};
+		//datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
+
+		var stratForBlack = new RandomStrategy(9, 6.5);
+		var stratForWhite = new RandomStrategy(9, 6.5);
+		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)
