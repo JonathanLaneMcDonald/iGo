@@ -70,7 +70,7 @@ public class InferenceModel {
 
 		// policy head
 		config.addLayer("PolicyProjector", new ConvolutionLayer.Builder()
-				.kernelSize(new int[]{3,3}).stride(new int[]{1,1}).convolutionMode(ConvolutionMode.Same)
+				.kernelSize(new int[]{1,1}).stride(new int[]{1,1}).convolutionMode(ConvolutionMode.Same)
 				.nIn(filters).nOut(2).build(), nextInput);
 
 		config.addLayer("PolicyProjectorBN", new BatchNormalization.Builder()
@@ -91,7 +91,7 @@ public class InferenceModel {
 
 		// value head
 		config.addLayer("ValueProjector", new ConvolutionLayer.Builder()
-				.kernelSize(new int[]{3,3}).stride(new int[]{1,1}).convolutionMode(ConvolutionMode.Same)
+				.kernelSize(new int[]{1,1}).stride(new int[]{1,1}).convolutionMode(ConvolutionMode.Same)
 				.nIn(filters).nOut(1).build(), nextInput);
 
 		config.addLayer("ValueProjectorBN", new BatchNormalization.Builder()
@@ -102,7 +102,7 @@ public class InferenceModel {
 
 		config.addLayer("ValueDense", new DenseLayer.Builder()
 				.nIn(inputShape.rows * inputShape.cols)
-				.nOut(inputShape.rows * inputShape.cols)
+				.nOut(256)
 				.build(), "ValueProjectorRELU");
 
 		Map<String, InputPreProcessor> valueProcessorMap = new HashMap<String, InputPreProcessor>();
@@ -110,7 +110,7 @@ public class InferenceModel {
 		config.setInputPreProcessors(valueProcessorMap);
 
 		config.addLayer("Value", new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-				.activation(Activation.SIGMOID).nIn(inputShape.rows * inputShape.cols).nOut(1).build(), "ValueDense");
+				.activation(Activation.TANH).nIn(256).nOut(1).build(), "ValueDense");
 
 		config.setOutputs("Policy", "Value");
 

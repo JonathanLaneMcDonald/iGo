@@ -23,9 +23,12 @@ def build_iGo_model(filters, blocks, input_shape, policy_space):
 	"""
 
 	inputs = Input(shape=input_shape)
-	x = inputs
 
-	for b in range(blocks):
+	x = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(inputs)
+	x = BatchNormalization()(x)
+	x = Activation('relu')(x)
+
+	for _ in range(blocks):
 		y = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(x)
 		y = BatchNormalization()(y)
 		y = Activation('relu')(y)
@@ -33,8 +36,7 @@ def build_iGo_model(filters, blocks, input_shape, policy_space):
 		y = Conv2D(filters=filters, kernel_size=(3, 3), padding='same')(y)
 		y = BatchNormalization()(y)
 
-		if b:		x = Add()([x,y])
-		else:		x = y
+		x = Add()([x,y])
 
 		x = Activation('relu')(x)
 
