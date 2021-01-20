@@ -45,7 +45,8 @@ public class Main
 
 	public static void loadModelTest()
 	{
-		var model = DualResnetModel.getModel(4, 32);
+		var model = InferenceModel.getModel(32, 4, new InputShape(9, 9, 4));
+		//var model = DualResnetModel.getModel(4, 32);
 		var auto = model.summary();
 	}
 
