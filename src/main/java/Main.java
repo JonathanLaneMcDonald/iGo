@@ -1,3 +1,6 @@
+import org.deeplearning4j.nn.modelimport.keras.exceptions.InvalidKerasConfigurationException;
+import org.deeplearning4j.nn.modelimport.keras.exceptions.UnsupportedKerasConfigurationException;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,10 +19,12 @@ public class Main
 		//int[] boardSizes = {7,8,9};
 		//datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
 
-		int boardSize = 9;
+		loadModelTest();
+
+		int boardSize = 5;
 		double komi = 6.5;
 		var stratForBlack = new RandomStrategy(boardSize, komi);
-		var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 100);
+		var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 1000);
 		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
 
 		int totalGames = 0;
@@ -36,6 +41,12 @@ public class Main
 
 			System.out.println("Total Games:"+totalGames+" Black/White:" + blackWins + "/" + whiteWins);
 		}
+	}
+
+	public static void loadModelTest()
+	{
+		var model = DualResnetModel.getModel(4, 32);
+		var auto = model.summary();
 	}
 
 	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)

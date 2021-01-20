@@ -2,27 +2,27 @@
 import numpy as np
 from numpy.random import random, choice
 
-from keras.models import Model, load_model, save_model
-from keras.layers import Input, Conv2D, GlobalAveragePooling2D
-from keras.layers import BatchNormalization, Add, Activation, Flatten, Dense
-from keras.optimizers import SGD
+from tensorflow.keras.models import Model, load_model, save_model
+from tensorflow.keras.layers import Input, Conv2D, GlobalAveragePooling2D
+from tensorflow.keras.layers import BatchNormalization, Add, Activation, Flatten, Dense
+from tensorflow.keras.optimizers import SGD
 
 def build_iGo_model(filters, blocks, input_shape, policy_space):
-    
-    """
+
+	"""
 	model architecture:
 		inputs:
 			channel 0:	        whether or not the location is on the board (to accommodate different board sizes)
-            channel 1 + 2k+0:   black stones for kth position on the game state stack
-            channel 1 + 2k+1:   white stones for kth position on the game state stack
+			channel 1 + 2k+0:   black stones for kth position on the game state stack
+			channel 1 + 2k+1:   white stones for kth position on the game state stack
 			channel n-1:	    player to move
 
 		outputs:
 			policy
 			value
 	"""
-	
-    inputs = Input(shape=input_shape)
+
+	inputs = Input(shape=input_shape)
 	x = inputs
 
 	for b in range(blocks):
