@@ -14,12 +14,11 @@ public class Main
 	{
 		//loadModelTest();
 
-		int boardSize = 5;
-		double komi = 2.5;
+		datasetGeneratorTest(16384, 100, 100, new BoardSizeDistribution(new int[]{7,8,9}, true));
 
-		var gameConfig = new MatchConfiguration(boardSize, komi);
-		var blackSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
-		var whiteSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
+		var gameConfig = new MatchConfiguration(5, 2.5);
+		var blackSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS, gameConfig, 50);
+		var whiteSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS, gameConfig, 50);
 		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, gameConfig);
 
 		orchestrator.playNGames(10);
@@ -33,7 +32,7 @@ public class Main
 		var auto = model.summary();
 	}
 
-	public static void datasetGeneratorTest(int gamesToPlay, BoardSizeDistribution bsd)
+	public static void datasetGeneratorTest(int gamesToPlay, int blackRollouts, int whiteRollouts, BoardSizeDistribution bsd)
 	{
 		try {
 			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -45,12 +44,14 @@ public class Main
 			long startTime = System.nanoTime();
 			for(int game = 1; game < gamesToPlay; game++){
 				var boardSize = bsd.getBoardSize();
-				var numRollouts = boardSize*boardSize;
-				var gameRecords = mctsSelfPlayTest(boardSize, numRollouts, numRollouts, 1);
-				for(var record : gameRecords)
-					writer.write(record + "\n");
+				var blackStrategy = new VanillaTreeSearchStrategy(boardSize, 6.5, blackRollouts);
+				var whiteStrategy = new VanillaTreeSearchStrategy(boardSize, 6.5, whiteRollouts);
+				var matchFacilitator = new MatchFacilitator(blackStrategy, whiteStrategy);
+				var result = matchFacilitator.facilitateGame(new MatchConfiguration(boardSize, 6.5));
+
+				writer.write(result.movesToSGF() + "\n");
 				writer.flush();
-				moves += gameRecords.size();
+				moves += result.getCountOfMovesPlayed();
 
 				var elapsedTime = System.nanoTime() - startTime;
 				var timePerGame = elapsedTime / game;
