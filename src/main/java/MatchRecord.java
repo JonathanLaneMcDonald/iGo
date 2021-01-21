@@ -83,6 +83,10 @@ public class MatchRecord {
 
 	public String movesToSGF()
 	{
-		return SGFParser.movesToSGF(moveset.stream().map(m -> m.move).collect(Collectors.toCollection(ArrayList::new)), game.getSide());
+		return game.getSide() + " " + game.getKomi() + " " + SGFParser.movesToSGF(moveset.stream().map(m -> m.move).collect(Collectors.toCollection(ArrayList::new)), game.getSide());
+	}
+
+	public int getCountOfMovesPlayed() {
+		return moveset.size();
 	}
 }
