@@ -23,9 +23,12 @@ public class Main
 
 		int boardSize = 5;
 		double komi = 6.5;
-		var stratForBlack = new RandomStrategy(boardSize, komi);
-		var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 1000);
-		var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
+		//var stratForBlack = new VanillaTreeSearchStrategy(boardSize, komi, 50);
+		//var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 50);
+		//var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
+
+		var sharedStrategy = new VanillaTreeSearchStrategy(boardSize, komi, 50);
+		var matchFacilitator = new MatchFacilitator(sharedStrategy);
 
 		int totalGames = 0;
 		int blackWins = 0;

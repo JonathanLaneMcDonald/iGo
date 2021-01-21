@@ -14,10 +14,20 @@ public class MatchFacilitator {
 		whiteStrategy = forWhite;
 	}
 
+	public MatchFacilitator(Strategy sharedStrategy)
+	{
+		blackStrategy = sharedStrategy;
+		whiteStrategy = sharedStrategy;
+	}
+
 	public void initializeGame(int boardSize, double komi)
 	{
-		blackStrategy.initializeGame(boardSize, komi);
-		whiteStrategy.initializeGame(boardSize, komi);
+		if(blackStrategy == whiteStrategy)
+			blackStrategy.initializeGame(boardSize, komi);
+		else {
+			blackStrategy.initializeGame(boardSize, komi);
+			whiteStrategy.initializeGame(boardSize, komi);
+		}
 	}
 
 	public int facilitateGame(GameConfiguration gameConfig)
@@ -54,8 +64,13 @@ public class MatchFacilitator {
 				//game.display(new HashSet<>(Collections.singleton(nextMove.get())));
 
 				moves.add(nextMove.get());
-				blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
-				whiteStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
+				totalMoves ++;
+				if(blackStrategy == whiteStrategy)
+					blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
+				else {
+					blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
+					whiteStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
+				}
 
 				nextToMove = -nextToMove;
 			}
