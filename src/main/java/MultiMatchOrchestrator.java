@@ -34,8 +34,8 @@ public class MultiMatchOrchestrator {
 	}
 
 	public void playGame() {
-		var optBlackStrategy = blackSupplier.getStrategy(gameConfig.boardSize, gameConfig.komi, 50);
-		var optWhiteStrategy = whiteSupplier.getStrategy(gameConfig.boardSize, gameConfig.komi, 50);
+		var optBlackStrategy = blackSupplier.getStrategy();
+		var optWhiteStrategy = whiteSupplier.getStrategy();
 		if(optBlackStrategy.isPresent() && optWhiteStrategy.isPresent()) {
 			var matchFacilitator = new MatchFacilitator(optBlackStrategy.get(), optBlackStrategy.get());
 			var result = matchFacilitator.facilitateGame(gameConfig);

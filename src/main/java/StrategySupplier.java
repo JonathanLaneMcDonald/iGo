@@ -10,17 +10,21 @@ public class StrategySupplier {
 	}
 
 	StrategyType selectedStrategy;
+	MatchConfiguration matchConfig;
+	int playouts;
 
-	public StrategySupplier(StrategyType strategy) {
+	public StrategySupplier(StrategyType strategy, MatchConfiguration config, int mctsPlayouts) {
 		selectedStrategy = strategy;
+		matchConfig = config;
+		playouts = mctsPlayouts;
 	}
 
-	public Optional<Strategy> getStrategy(int boardSize, double komi, int playouts) {
+	public Optional<Strategy> getStrategy() {
 		switch(selectedStrategy) {
 			case Random:
-				return Optional.of(new RandomStrategy(boardSize, komi));
+				return Optional.of(new RandomStrategy(matchConfig.boardSize, matchConfig.komi));
 			case VanillaMCTS:
-				return Optional.of(new VanillaTreeSearchStrategy(boardSize, komi, playouts));
+				return Optional.of(new VanillaTreeSearchStrategy(matchConfig.boardSize, matchConfig.komi, playouts));
 			case ModelEnabledMCTS:
 				System.out.println("We don't have model enabled mcts yet");
 				return Optional.empty();
