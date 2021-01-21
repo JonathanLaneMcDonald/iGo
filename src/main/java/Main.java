@@ -19,9 +19,9 @@ public class Main
 		//int[] boardSizes = {7,8,9};
 		//datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
 
-		loadModelTest();
+		//loadModelTest();
 
-		int boardSize = 5;
+		int boardSize = 7;
 		double komi = 6.5;
 		//var stratForBlack = new VanillaTreeSearchStrategy(boardSize, komi, 50);
 		//var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 50);
@@ -33,16 +33,21 @@ public class Main
 		int totalGames = 0;
 		int blackWins = 0;
 		int whiteWins = 0;
+		int errors = 0;
 		for(int i = 0; i < 400; i++) {
 			var result = matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi));
 
-			totalGames ++;
-			if(result == 1)
-				blackWins ++;
-			else
-				whiteWins ++;
+			if(result.gameIsFreeOfErrorsAndPlayedToConclusion()) {
+				totalGames++;
+				if (result.getOutcome() == 1)
+					blackWins++;
+				else if (result.getOutcome() == -1)
+					whiteWins++;
 
-			System.out.println("Total Games:"+totalGames+" Black/White:" + blackWins + "/" + whiteWins);
+				System.out.println("Errors:"+errors+" Total Games:" + totalGames + " Black/White:" + blackWins + "/" + whiteWins + " SGF:" + result.movesToSGF());
+			}
+			else
+				errors ++;
 		}
 	}
 

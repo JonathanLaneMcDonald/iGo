@@ -30,16 +30,17 @@ public class MatchFacilitator {
 		}
 	}
 
-	public int facilitateGame(GameConfiguration gameConfig)
+	public MatchRecord facilitateGame(GameConfiguration gameConfig)
 	{
+		var matchRecord = new MatchRecord(gameConfig.boardSize, gameConfig.komi);
+
 		initializeGame(gameConfig.boardSize, gameConfig.komi);
 
-		var game = new iGo(gameConfig.boardSize, gameConfig.komi);
 		int nextToMove = 1;
+		int totalMoves = 0;
 		int consecutivePasses = 0;
 		boolean playerResigns = false;
-		var moves = new ArrayList<Integer>();
-		while(consecutivePasses < 2 && moves.size() < gameConfig.maxMoves && !playerResigns) {
+		while(consecutivePasses < 2 && totalMoves < gameConfig.maxMoves && !playerResigns) {
 
 			Optional<Integer> nextMove;
 			if (nextToMove == 1) {
@@ -51,6 +52,7 @@ public class MatchFacilitator {
 
 			if (nextMove.isEmpty()) {
 				playerResigns = true;
+				matchRecord.concludeInResignationBy(nextToMove);
 			}
 			else {
 				if (nextMove.get() == gameConfig.boardArea) {
@@ -60,10 +62,8 @@ public class MatchFacilitator {
 					consecutivePasses = 0;
 				}
 
-				game.placeStone(nextMove.get(), nextToMove);
-				//game.display(new HashSet<>(Collections.singleton(nextMove.get())));
+				matchRecord.recordMove(nextMove.get(), nextToMove);
 
-				moves.add(nextMove.get());
 				totalMoves ++;
 				if(blackStrategy == whiteStrategy)
 					blackStrategy.applyMoveForPlayer(nextMove.get(), nextToMove);
@@ -76,11 +76,8 @@ public class MatchFacilitator {
 			}
 		}
 
-		//return gameConfig.boardSize + " " + gameConfig.komi + " " + SGFParser.movesToSGF(moves, gameConfig.boardSize);
+		matchRecord.concludeGame();
 
-		if(game.getSimpleTerminalScore() < 0)
-			return -1;
-		else
-			return 1;
+		return matchRecord;
 	}
 }
