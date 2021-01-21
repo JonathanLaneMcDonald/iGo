@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -26,36 +25,26 @@ public class Main
 		orchestrator.playNGames(10);
 		for(var string : orchestrator.getSGFRecords())
 			System.out.println(string);
-
 	}
 
 	public static void loadModelTest()
 	{
 		var model = InferenceModel.getModel(32, 4, new InputShape(9, 9, 4));
-		//var model = DualResnetModel.getModel(4, 32);
 		var auto = model.summary();
 	}
 
-	public static void datasetGeneratorTest(int gamesToPlay, int[] boardSizes, String treePolicy, String rolloutPolicy)
+	public static void datasetGeneratorTest(int gamesToPlay, BoardSizeDistribution bsd)
 	{
-		int aggregateBoardArea = Arrays.stream(boardSizes).map(p->p*p).reduce(0, Integer::sum);
-
-		var boardSizeDistribution = new ArrayList<Integer>();
-		for(int size : boardSizes)
-			for(int i = 0; i < aggregateBoardArea/(size*size); i++)
-				boardSizeDistribution.add(size);
-
-		var random = new Random();
 		try {
 			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 			LocalDateTime now = LocalDateTime.now();
 
-			BufferedWriter writer = new BufferedWriter(new FileWriter("self-play data "+dtf.format(now)+" "+treePolicy+" "+rolloutPolicy));
+			BufferedWriter writer = new BufferedWriter(new FileWriter("self-play data "+dtf.format(now)));
 
 			int moves = 0;
 			long startTime = System.nanoTime();
 			for(int game = 1; game < gamesToPlay; game++){
-				var boardSize = boardSizeDistribution.get(random.nextInt(boardSizeDistribution.size()));
+				var boardSize = bsd.getBoardSize();
 				var numRollouts = boardSize*boardSize;
 				var gameRecords = mctsSelfPlayTest(boardSize, numRollouts, numRollouts, 1);
 				for(var record : gameRecords)
