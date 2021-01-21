@@ -77,7 +77,7 @@ public class MonteCarloTreeSearch {
 
 		nodesExpanded = 0;
 		simulationErrors = 0;
-		maxRecurseDepth = 20;
+		maxRecurseDepth = 10;
 
 		// i know magic numbers are bad, but for now it's important for player to be set to -1 here for black to start the game
 		root = new Node(null, -1, -1, 0);
