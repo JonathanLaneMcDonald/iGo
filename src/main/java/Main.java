@@ -1,6 +1,3 @@
-import org.deeplearning4j.nn.modelimport.keras.exceptions.InvalidKerasConfigurationException;
-import org.deeplearning4j.nn.modelimport.keras.exceptions.UnsupportedKerasConfigurationException;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,39 +13,20 @@ public class Main
 
 	public static void main(String[] args)
 	{
-		//int[] boardSizes = {7,8,9};
-		//datasetGeneratorTest(10000, boardSizes, "vanilla mcts", "random rollouts");
-
 		//loadModelTest();
 
-		int boardSize = 7;
-		double komi = 6.5;
-		//var stratForBlack = new VanillaTreeSearchStrategy(boardSize, komi, 50);
-		//var stratForWhite = new VanillaTreeSearchStrategy(boardSize, komi, 50);
-		//var matchFacilitator = new MatchFacilitator(stratForBlack, stratForWhite);
+		int boardSize = 5;
+		double komi = 2.5;
 
-		var sharedStrategy = new VanillaTreeSearchStrategy(boardSize, komi, 50);
-		var matchFacilitator = new MatchFacilitator(sharedStrategy);
+		var gameConfig = new GameConfiguration(boardSize, komi);
+		var blackSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
+		var whiteSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
+		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, gameConfig);
 
-		int totalGames = 0;
-		int blackWins = 0;
-		int whiteWins = 0;
-		int errors = 0;
-		for(int i = 0; i < 400; i++) {
-			var result = matchFacilitator.facilitateGame(new GameConfiguration(boardSize, komi));
+		orchestrator.playNGames(10);
+		for(var string : orchestrator.getSGFRecords())
+			System.out.println(string);
 
-			if(result.gameIsFreeOfErrorsAndPlayedToConclusion()) {
-				totalGames++;
-				if (result.getOutcome() == 1)
-					blackWins++;
-				else if (result.getOutcome() == -1)
-					whiteWins++;
-
-				System.out.println("Errors:"+errors+" Total Games:" + totalGames + " Black/White:" + blackWins + "/" + whiteWins + " SGF:" + result.movesToSGF());
-			}
-			else
-				errors ++;
-		}
 	}
 
 	public static void loadModelTest()
