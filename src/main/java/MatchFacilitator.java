@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 
 public class MatchFacilitator {
@@ -30,7 +27,7 @@ public class MatchFacilitator {
 		}
 	}
 
-	public MatchRecord facilitateGame(GameConfiguration gameConfig)
+	public MatchRecord facilitateGame(MatchConfiguration gameConfig)
 	{
 		var matchRecord = new MatchRecord(gameConfig.boardSize, gameConfig.komi);
 

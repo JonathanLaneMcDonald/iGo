@@ -1,6 +1,5 @@
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MultiMatchOrchestrator {
@@ -19,11 +18,11 @@ public class MultiMatchOrchestrator {
 	StrategySupplier blackSupplier;
 	StrategySupplier whiteSupplier;
 
-	GameConfiguration gameConfig;
+	MatchConfiguration gameConfig;
 
 	private ArrayList<MatchRecord> matchRecords;
 
-	public MultiMatchOrchestrator(StrategySupplier forBlack, StrategySupplier forWhite, GameConfiguration gameConfig) {
+	public MultiMatchOrchestrator(StrategySupplier forBlack, StrategySupplier forWhite, MatchConfiguration gameConfig) {
 		errors = 0;
 
 		blackSupplier = forBlack;

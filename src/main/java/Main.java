@@ -18,7 +18,7 @@ public class Main
 		int boardSize = 5;
 		double komi = 2.5;
 
-		var gameConfig = new GameConfiguration(boardSize, komi);
+		var gameConfig = new MatchConfiguration(boardSize, komi);
 		var blackSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
 		var whiteSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS);
 		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, gameConfig);
