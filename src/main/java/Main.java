@@ -10,29 +10,23 @@ import java.util.Random;
 public class Main
 {
 
-	public static void main(String[] args)
-	{
-		//loadModelTest();
-
-		datasetGeneratorTest(16384, 100, 100, new BoardSizeDistribution(new int[]{7,8,9}, true));
-
-		var gameConfig = new MatchConfiguration(5, 2.5);
-		var blackSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS, gameConfig, 50);
-		var whiteSupplier = new StrategySupplier(StrategySupplier.StrategyType.VanillaMCTS, gameConfig, 50);
-		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, gameConfig);
-
-		orchestrator.playNGames(10);
-		for(var string : orchestrator.getSGFRecords())
-			System.out.println(string);
-	}
-
 	public static void loadModelTest()
 	{
 		var model = InferenceModel.getModel(32, 4, new InputShape(9, 9, 4));
 		var auto = model.summary();
 	}
 
-	public static void datasetGeneratorTest(int gamesToPlay, int blackRollouts, int whiteRollouts, BoardSizeDistribution bsd)
+	public static void main(String[] args)
+	{
+		//loadModelTest();
+
+		var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
+		var blackSupplier = new StrategySupplier(PlayerConfiguration.PresetRandom(), StrategySupplier.StrategyType.Random);
+		var whiteSupplier = new StrategySupplier(PlayerConfiguration.PresetRandom(), StrategySupplier.StrategyType.Random);
+		datasetGeneratorTest(new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig), 128);
+	}
+
+	public static void datasetGeneratorTest(MultiMatchOrchestrator orchestrator, int gamesToPlay)
 	{
 		try {
 			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -40,25 +34,13 @@ public class Main
 
 			BufferedWriter writer = new BufferedWriter(new FileWriter("self-play data "+dtf.format(now)));
 
-			int moves = 0;
-			long startTime = System.nanoTime();
-			for(int game = 1; game < gamesToPlay; game++){
-				var boardSize = bsd.getBoardSize();
-				var blackStrategy = new VanillaTreeSearchStrategy(boardSize, 6.5, blackRollouts);
-				var whiteStrategy = new VanillaTreeSearchStrategy(boardSize, 6.5, whiteRollouts);
-				var matchFacilitator = new MatchFacilitator(blackStrategy, whiteStrategy);
-				var result = matchFacilitator.facilitateGame(new MatchConfiguration(boardSize, 6.5));
-
-				writer.write(result.movesToSGF() + "\n");
+			orchestrator.playNGames(gamesToPlay);
+			for(var string : orchestrator.getSGFRecords()) {
+				writer.write(string + "\n");
 				writer.flush();
-				moves += result.getCountOfMovesPlayed();
-
-				var elapsedTime = System.nanoTime() - startTime;
-				var timePerGame = elapsedTime / game;
-				var timePerMove = elapsedTime / moves;
-
-				System.out.println("board size " + boardSize + " " + game + " games played and " + moves + " moves written -- "+" Time/(m,g): ("+timePerMove+","+timePerGame+")");
+				System.out.println(string);
 			}
+
 			writer.close();
 		}
 		catch(IOException e) {

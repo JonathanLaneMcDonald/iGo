@@ -18,27 +18,28 @@ public class MultiMatchOrchestrator {
 	StrategySupplier blackSupplier;
 	StrategySupplier whiteSupplier;
 
-	MatchConfiguration gameConfig;
+	MultiMatchConfiguration mmConfig;
 
 	private ArrayList<MatchRecord> matchRecords;
 
-	public MultiMatchOrchestrator(StrategySupplier forBlack, StrategySupplier forWhite, MatchConfiguration gameConfig) {
+	public MultiMatchOrchestrator(StrategySupplier forBlack, StrategySupplier forWhite, MultiMatchConfiguration mmConfig) {
 		errors = 0;
 
 		blackSupplier = forBlack;
 		whiteSupplier = forWhite;
 
-		this.gameConfig = gameConfig;
+		this.mmConfig = mmConfig;
 
 		matchRecords = new ArrayList<>();
 	}
 
 	public void playGame() {
-		var optBlackStrategy = blackSupplier.getStrategy();
-		var optWhiteStrategy = whiteSupplier.getStrategy();
+		var matchConfig = new MatchConfiguration(mmConfig.getBoardSize(), mmConfig.getKomi());
+		var optBlackStrategy = blackSupplier.getStrategy(matchConfig);
+		var optWhiteStrategy = whiteSupplier.getStrategy(matchConfig);
 		if(optBlackStrategy.isPresent() && optWhiteStrategy.isPresent()) {
 			var matchFacilitator = new MatchFacilitator(optBlackStrategy.get(), optBlackStrategy.get());
-			var result = matchFacilitator.facilitateGame(gameConfig);
+			var result = matchFacilitator.facilitateGame(matchConfig);
 			if(result.gameIsFreeOfErrorsAndPlayedToConclusion())
 				matchRecords.add(result);
 			else {
