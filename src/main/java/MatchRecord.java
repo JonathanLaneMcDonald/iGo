@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 public class MatchRecord {
@@ -33,9 +35,9 @@ public class MatchRecord {
 	boolean gameEndedInResignation;
 	boolean gamePlayedToConclusion;
 
-	public MatchRecord(int boardSize, double komi)
+	public MatchRecord(MatchConfiguration matchConfig)
 	{
-		game = new iGo(boardSize, komi);
+		game = new iGo(matchConfig.boardSize, matchConfig.komi);
 
 		moveset = new ArrayList<>();
 

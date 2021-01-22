@@ -17,7 +17,7 @@ public interface Strategy {
 			for human strategy, i guess it's just a time limit and some kind of interface for collecting inputs
 	 */
 
-	void initializeGame(int boardSize, double komi);
+	void initializeGame(MatchConfiguration matchConfig);
 
 	Optional<Integer> getNextMove(int player);
 

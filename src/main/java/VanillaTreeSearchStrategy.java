@@ -2,27 +2,35 @@ import java.util.Optional;
 
 public class VanillaTreeSearchStrategy implements Strategy{
 
+	MatchConfiguration matchConfig;
+	PlayerConfiguration playerConfig;
+
 	int searchesPerTurn;
 	int topK;
+	double noiseWeight;
 	double expansionProbability;
 	double resignationThreshold;
 
 	MonteCarloTreeSearch mcts;
 
-	public VanillaTreeSearchStrategy(int boardSize, double komi, int searchesPerTurn)
+	public VanillaTreeSearchStrategy(MatchConfiguration matchConfig, PlayerConfiguration playerConfig)
 	{
-		topK = 3;
+		this.matchConfig = matchConfig;
+		this.playerConfig = playerConfig;
+
+		topK = 1;
+		noiseWeight = 0;
 		expansionProbability = 1;
 		resignationThreshold = 0.00;
 
 		this.searchesPerTurn = searchesPerTurn;
 
-		initializeGame(boardSize, komi);
+		initializeGame(matchConfig);
 	}
 
 	@Override
-	public void initializeGame(int boardSize, double komi) {
-		mcts = new MonteCarloTreeSearch(boardSize, komi, 0.25);
+	public void initializeGame(MatchConfiguration matchConfig) {
+		mcts = new MonteCarloTreeSearch(matchConfig.boardSize, matchConfig.komi, noiseWeight);
 	}
 
 	@Override

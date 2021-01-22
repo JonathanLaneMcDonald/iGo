@@ -17,27 +17,34 @@ public class MatchFacilitator {
 		whiteStrategy = sharedStrategy;
 	}
 
-	public void initializeGame(int boardSize, double komi)
+	public void initializeGame(MatchConfiguration matchConfig)
 	{
 		if(blackStrategy == whiteStrategy)
-			blackStrategy.initializeGame(boardSize, komi);
+			blackStrategy.initializeGame(matchConfig);
 		else {
-			blackStrategy.initializeGame(boardSize, komi);
-			whiteStrategy.initializeGame(boardSize, komi);
+			blackStrategy.initializeGame(matchConfig);
+			whiteStrategy.initializeGame(matchConfig);
 		}
 	}
 
-	public MatchRecord facilitateGame(MatchConfiguration gameConfig)
-	{
-		var matchRecord = new MatchRecord(gameConfig.boardSize, gameConfig.komi);
+	public MatchRecord facilitateGame(MatchConfiguration gameConfig) {
+		return facilitateGame(gameConfig, false);
+	}
 
-		initializeGame(gameConfig.boardSize, gameConfig.komi);
+	public MatchRecord facilitateGame(MatchConfiguration matchConfig, boolean displayBoard)
+	{
+		var matchRecord = new MatchRecord(matchConfig);
+
+		initializeGame(matchConfig);
 
 		int nextToMove = 1;
 		int totalMoves = 0;
 		int consecutivePasses = 0;
 		boolean playerResigns = false;
-		while(consecutivePasses < 2 && totalMoves < gameConfig.maxMoves && !playerResigns) {
+		while(consecutivePasses < 2 && totalMoves < matchConfig.maxMoves && !playerResigns) {
+
+			if(displayBoard)
+				matchRecord.displayBoardForHuman();
 
 			Optional<Integer> nextMove;
 			if (nextToMove == 1) {
@@ -52,7 +59,7 @@ public class MatchFacilitator {
 				matchRecord.concludeInResignationBy(nextToMove);
 			}
 			else {
-				if (nextMove.get() == gameConfig.boardArea) {
+				if (nextMove.get() == matchConfig.boardArea) {
 					consecutivePasses++;
 				}
 				else {

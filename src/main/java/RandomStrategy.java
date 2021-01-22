@@ -6,14 +6,14 @@ public class RandomStrategy implements Strategy{
 	iGo game;
 	Random random;
 
-	public RandomStrategy(int boardSize, double komi) {
+	public RandomStrategy(MatchConfiguration matchConfig) {
 		random = new Random();
-		initializeGame(boardSize, komi);
+		initializeGame(matchConfig);
 	}
 
 	@Override
-	public void initializeGame(int boardSize, double komi) {
-		game = new iGo(boardSize, komi);
+	public void initializeGame(MatchConfiguration matchConfig) {
+		game = new iGo(matchConfig.boardSize, matchConfig.komi);
 	}
 
 	@Override
