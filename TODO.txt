@@ -1,4 +1,56 @@
 
+Symmetries are a thing again.
+
+Todo:
+
+	State:
+		I can currently automate gameplay and creation of game records on-disk. now i need some classes to handle that data more appropriately and make training-ready datasets from it!
+
+
+
+	Task:
+	
+		build some classes for handling game records and transforming them into a training dataset -- i can think of two classes right now that might be useful:
+			
+			HistoricalGame
+				data class storing: size, komi, sgf
+				constructors:
+					one constructor takes a string of the format "size komi sgf" and parses it into its components
+					another constructor takes (size, komi, sgf) as arguments to instantiate the object
+				member functions:
+					toString() concatenates size, komi, and sgf into a string
+					getSize
+					getKomi
+					getSGF
+					getMoves (this one calls the SGFParser to reconstruct moves)
+			
+			HistoricalGamesBuffer
+				takes a path to where the historical games are [a game record has the format (size, komi, sgf) (i'm lazily using the term sgf to refer to just the moves and not all the other fields)]
+				creates file or opens for append and loads all existing game records, making them available through a function call
+				member functions include:
+					add(String s)
+					add(String[] s)
+					these members add HistoricalGames one at a time or in batches
+			
+			TeachableMoments
+				takes a HistoricalGamesBuffer and samples it, reconstructing game states to build a dataset consisting of a specified number of frames with desired input and output shapes
+		
+
+	Task:
+		
+		figure out what to put in the PlayerConfiguration -- it's going to be lots of stuff relating to things like monte carlo tree search
+
+
+	Issue:
+		not necessarily a bug, but i'm getting reports that games aren't playing to completion in the MatchFacilitator.
+
+		MultiMatchOrchestrator::playGame()
+			if(result.gameIsFreeOfErrorsAndPlayedToConclusion()) is evaluating to false sometimes
+
+
+
+
+
 Apparently, symmetries aren't a thing. 
 So don't use symmetries this time.
 
