@@ -89,4 +89,11 @@ public class MatchRecord {
 	public int getCountOfMovesPlayed() {
 		return moveset.size();
 	}
+
+	public void displayBoardForHuman() {
+		if(moveset.isEmpty())
+			game.displayBoardForHuman(new HashSet<>());
+		else
+			game.displayBoardForHuman(new HashSet<>(Collections.singleton(moveset.get(moveset.size()-1).move)));
+	}
 }

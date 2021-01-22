@@ -625,6 +625,29 @@ public class iGo
 		System.out.print("\n");
 	}
 
+	public void displayBoardForHuman(Set<Integer> highlightPositions)
+	{
+		for(int r = 0; r < side; r++)
+		{
+			for(int c = 0; c < side; c++)
+			{
+				var position = side*r+c;
+
+				if(highlightPositions.contains(position))	System.out.print("(");
+				else										System.out.print(" ");
+
+				if(board[side*r+c] < area && ownership[board[side*r+c]] == 1)		System.out.print(" B ");
+				if(board[side*r+c] < area && ownership[board[side*r+c]] == -1)		System.out.print(" W ");
+				if(area <= board[side*r+c] || ownership[board[side*r+c]] == 0)		System.out.printf("%1$3s", position);
+
+				if(highlightPositions.contains(position))	System.out.print(")");
+				else										System.out.print(" ");
+			}
+			System.out.print("\n");
+		}
+		System.out.print("\n");
+	}
+
 	public String boardAsString()
 	{
 		var boardRepr = "";
