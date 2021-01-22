@@ -27,7 +27,7 @@ public class MatchFacilitator {
 		}
 	}
 
-	public MatchRecord facilitateGame(MatchConfiguration gameConfig) {
+	public MatchRecord facilitateMatch(MatchConfiguration gameConfig) {
 		return facilitateGame(gameConfig, false);
 	}
 
