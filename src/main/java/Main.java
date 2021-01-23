@@ -21,7 +21,7 @@ public class Main
 		//loadModelTest();
 
 		var schedule = TrainingSchedule.defaultSchedule();
-		var hgb = new HistoricalGamesBuffer("path to collection of historical games");
+		var hgb = new HistoricalGamesBuffer(schedule,"self-play data");
 		var policy = new TrainablePolicy("path to a trainable policy");
 		var selfPlayTrainer = new SelfPlayTrainer(schedule, hgb, policy);
 
