@@ -5,12 +5,6 @@ public class VanillaTreeSearchStrategy implements Strategy{
 	MatchConfiguration matchConfig;
 	PlayerConfiguration playerConfig;
 
-	int searchesPerTurn;
-	int topK;
-	double noiseWeight;
-	double expansionProbability;
-	double resignationThreshold;
-
 	MonteCarloTreeSearch mcts;
 
 	public VanillaTreeSearchStrategy(MatchConfiguration matchConfig, PlayerConfiguration playerConfig)
@@ -18,27 +12,20 @@ public class VanillaTreeSearchStrategy implements Strategy{
 		this.matchConfig = matchConfig;
 		this.playerConfig = playerConfig;
 
-		topK = 1;
-		noiseWeight = 0;
-		expansionProbability = 1;
-		resignationThreshold = 0.00;
-
-		this.searchesPerTurn = searchesPerTurn;
-
 		initializeGame(matchConfig);
 	}
 
 	@Override
 	public void initializeGame(MatchConfiguration matchConfig) {
-		mcts = new MonteCarloTreeSearch(matchConfig.boardSize, matchConfig.komi, noiseWeight);
+		mcts = new MonteCarloTreeSearch(matchConfig.boardSize, matchConfig.komi, playerConfig.noiseWeight);
 	}
 
 	@Override
 	public Optional<Integer> getNextMove(int player) {
-		mcts.simulate(searchesPerTurn, expansionProbability);
+		mcts.simulate(playerConfig.playouts, playerConfig.expansionProbability);
 
-		if(mcts.nextPlayerChanceToWinExceeds(20, resignationThreshold)) {
-			return Optional.of(mcts.getWeightedRandomStrongestMoveFromTopK(topK));
+		if(mcts.nextPlayerChanceToWinExceeds(20, playerConfig.resignationThreshold)) {
+			return Optional.of(mcts.getWeightedRandomStrongestMoveFromTopK(playerConfig.topK));
 		}
 		else {
 			return Optional.empty();
