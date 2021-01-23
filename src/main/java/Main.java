@@ -20,10 +20,24 @@ public class Main
 	{
 		//loadModelTest();
 
-		var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
+		var schedule = new TrainingSchedule();
+		var hgb = new HistoricalGamesBuffer("path to collection of historical games");
+		var policy = new TrainablePolicy("path to a trainable policy");
+		var selfPlayTrainer = new SelfPlayTrainer(schedule, hgb, policy);
+
+		int parallelGames = 8;
+		int asyncWorkers = 8;
+		selfPlayTrainer.commenceTraining(parallelGames, asyncWorkers);
+
+		/*var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
+		var blackSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
+		var whiteSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
+		datasetGeneratorSpeedTest(new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig), 128);*/
+
+		/*var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
 		var blackSupplier = new StrategySupplier(PlayerConfiguration.PresetRandom(), StrategySupplier.StrategyType.Random);
 		var whiteSupplier = new StrategySupplier(PlayerConfiguration.PresetRandom(), StrategySupplier.StrategyType.Random);
-		datasetGeneratorTest(new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig), 128);
+		datasetGeneratorTest(new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig), 1024);*/
 	}
 
 	public static void datasetGeneratorTest(MultiMatchOrchestrator orchestrator, int gamesToPlay)
@@ -46,6 +60,14 @@ public class Main
 		catch(IOException e) {
 			System.out.println("Conflatulations, you found a runtime error!");
 		}
+	}
+
+	public static void datasetGeneratorSpeedTest(MultiMatchOrchestrator orchestrator, int gamesToPlay)
+	{
+		double startTime = System.nanoTime();
+		orchestrator.playNGames(gamesToPlay);
+		double stopTime = System.nanoTime();
+		System.out.println((stopTime - startTime)/gamesToPlay);
 	}
 
 	public static ArrayList<String> mctsSelfPlayTest(int boardSide, int rolloutsBlack, int rolloutsWhite, double expansionProbability)
