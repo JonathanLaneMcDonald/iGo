@@ -45,6 +45,18 @@ public class SGFParser
 		return new Move(r, c, side);
 	}
 
+	public static int sgfToMove(String s, int boardSize)
+	{
+		if(s.equals("pass"))
+			return -1;
+		if(s.length() != 2)
+			return -1;
+
+		int r = s.charAt(0) - 97;
+		int c = s.charAt(1) - 97;
+		return r*boardSize + c;
+	}
+
 	public static String movesToSGF(ArrayList<Integer> moves, int boardSize)
 	{
 		var sgfMoves = new StringBuilder("");
@@ -91,5 +103,10 @@ public class SGFParser
 	public List<Move> stringToMoves(String line)
 	{
 		return Arrays.stream(line.split(",")).map(this::sgfToMove).collect(Collectors.toList());
+	}
+
+	public static List<Integer> stringToMoves(String line, int boardSize)
+	{
+		return Arrays.stream(line.split(",")).map(mv -> sgfToMove(mv, boardSize)).collect(Collectors.toList());
 	}
 }
