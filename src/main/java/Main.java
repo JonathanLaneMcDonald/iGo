@@ -20,7 +20,7 @@ public class Main
 	{
 		//loadModelTest();
 
-		var schedule = new TrainingSchedule();
+		var schedule = TrainingSchedule.defaultSchedule();
 		var hgb = new HistoricalGamesBuffer("path to collection of historical games");
 		var policy = new TrainablePolicy("path to a trainable policy");
 		var selfPlayTrainer = new SelfPlayTrainer(schedule, hgb, policy);
