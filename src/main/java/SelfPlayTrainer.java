@@ -9,4 +9,8 @@ public class SelfPlayTrainer {
 		this.hgb = hgb;
 		this.policy = policy;
 	}
+
+	public void commenceTraining(int parallelGames, int asyncWorkers) {
+
+	}
 }
