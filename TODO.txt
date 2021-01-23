@@ -3,153 +3,50 @@ Symmetries are a thing again.
 
 Todo:
 
-	State:
-		I can currently automate gameplay and creation of game records on-disk. now i need some classes to handle that data more appropriately and make training-ready datasets from it!
+	Another Task:
+		me just spitballing about how i'm going to actually generate training data from the games i've collected
+			Description of TeachableMoments
+				may just have static methods because I don't think I really care about state here...
+				there may be a method like this, for example:
+				// this is basically what it'll (probably) look like to generate model inputs at training time, it's probably a bit different at inference time.
+				public static INDArray fromBufferReturnKModelInputs(HistoricalGamesBuffer, numSamples) {
+					// randomly sample the entire HistoricalGamesBuffer (because it acts like an EvictingQueue, tossing out games that are too old to care about)
+					teachable_moments = []
+					while len(state_action_pairs) < numSamples:
+						historical_game = uniform_random_from(HistoricalGamesBuffer)
 
+						// this is where we'd generate a symmetry if that was called for in the training schedule
+						// we'd treat the sampled game as a canonical game and generate a random symmetry out of the 8 possible ones, including "identity"
+						game_replay = get_replay_data(historical_game) // move-by-move board states, next moves, and final outcome
+						random_move = uniform_random_over_range(len(game_replay))
 
+						// a few thoughts on the above... i don't love the idea of simulating an entire game each time i do this, but i also know that i won't know the outcome unless i do because i'm not storing that...
+						// so the get_replay_data() function is going to need to basically create a MatchRecord as it's going ...
+						// i may introduce the concept of a MatchAuditor who's job it is to replay a HistoricalGame and record board state -> next action pairs as well as recording the eventual outcome
+						// a MatchAuditor has no business knowing about symmetries, so symmetries are going to need to be generated probably as a wrapper to the function above as follows:
 
-	Task:
-	
-		build some classes for handling game records and transforming them into a training dataset -- i can think of two classes right now that might be useful:
+						// since it's a Go Symmetry, we can assume the class knows there are 8 symmetrical modes and we don't have to specify that.
+						// with knowledge of the moves made and the board size, GoSymmetries will do a simple transformation on the moves to generate a new moveset and return a new HistoricalGame
+						game_replay = get_replay_data(GoSymmetries.randomSymmetry(historical_game))
+						
+						// this class is going to need to know something about the model input shape to be able to sample things correctly
+						// this would also be the time to generate a random symmetry if we were going to do that... (actually a few lines up)
+						teachable_moments.append(state_action_pair_at_move(game_replay, random_move))
+					
+					// now we have as many state-action pairs as we'd like for this training batch, including symmetries if we choose
+					// it's time to convert our state-action pairs into INDArrays of inputs and outputs
+
+					there's some tedium involved, but i pretty much know how to read and write like this, so i'll gloss over it for now
+
+					return some data structure that is the right shape for the model
+
+				}
 			
-			HistoricalGame
-				data class storing: size, komi, sgf
-				constructors:
-					one constructor takes a string of the format "size komi sgf" and parses it into its components
-					another constructor takes (size, komi, sgf) as arguments to instantiate the object
-				member functions:
-					toString() concatenates size, komi, and sgf into a string
-					getSize
-					getKomi
-					getSGF
-					getMoves (this one calls the SGFParser to reconstruct moves)
-			
-			HistoricalGamesBuffer
-				takes a path to where the historical games are [a game record has the format (size, komi, sgf) (i'm lazily using the term sgf to refer to just the moves and not all the other fields)]
-				creates file or opens for append and loads all existing game records, making them available through a function call
-				member functions include:
-					add(String s)
-					add(String[] s)
-					these members add HistoricalGames one at a time or in batches
-			
-			TeachableMoments
-				takes a HistoricalGamesBuffer and samples it, reconstructing game states to build a dataset consisting of a specified number of frames with desired input and output shapes
-		
-
-	Task:
-		
-		figure out what to put in the PlayerConfiguration -- it's going to be lots of stuff relating to things like monte carlo tree search
-
+				** I need to figure out how i'm going to implement this for inference, too... **
 
 	Issue:
 		not necessarily a bug, but i'm getting reports that games aren't playing to completion in the MatchFacilitator.
 
 		MultiMatchOrchestrator::playGame()
 			if(result.gameIsFreeOfErrorsAndPlayedToConclusion()) is evaluating to false sometimes
-
-
-
-
-
-Apparently, symmetries aren't a thing. 
-So don't use symmetries this time.
-
-Todo:
-
-	Bug:
-		I'm pretty sure I have a bug where the iGo class isn't recognizing things as "sensible moves" when there's just a single liberty. specifically, I've seen the following a few times:
-		 O  -  O  -  O  O  O 
-		 O  O  O  O  O  O  - 
-		 O  -  O  O  O  O  O 
-		 O  O  -  O  O  -  O 
-		 O  O  O  O  -  O  O 
-		 O  O  O  X  X  O  O 
-		 O  -  O  O  O  -  O 		
-		For example, both the random agent and the vanilla mcts agent (with 100 rollouts) passed on this board. 
-		There's clearly a black group that can be captured, so there may be a bug in my "get sensible moves" function.
-		A bug in this function predicts that I should find the same thing in my random rollouts, too, so I can write a test for that.
-	
-		 O  O  O  -  O  O  - 
-		 O  O  O  O  O  -  O 
-		 O  O  -  O  -  O  O 
-		 O (-) O  O  O  O  X 
-		 X  X  X  O  -  O (-)
-		 O  O  O  -  O  O  O 
-		 O  -  O  O  -  O  O 
-
-		Above is a list of unsimulated moves
-		White to move. The sum of simulations across the highlighted positions was zero. What the hell? The moves seem to be recognized as legal or "sensible" because that's how they got in the tree, but why aren't they being simulated? They seem like pretty good moves.
-		
-		This also is a consistent predictor of errors in the match facilitator
-		
-		 O  O  O  -  O  O  - 
-		 O  O  O  O  O  -  O 
-		 O  O  -  O  -  O  O 
-		 O (-) O  O  O  O  X 
-		 X  X  X  O  -  O (-)
-		 O  O  O  -  O  O  O 
-		 O  -  O  O  -  O  O 
-
-		Above is a list of unsimulated moves
-		 O  O  O  -  O  O  - 
-		 O  O  O  O  O  -  O 
-		 O  O  -  O  -  O  O 
-		 O (O) O  O  O  O  X 
-		 -  -  -  O  -  O  - 
-		 O  O  O  -  O  O  O 
-		 O  -  O  O  -  O  O 
-
-		 O  O  O  -  O  O  - 
-		 O  O  O  O  O  -  O 
-		 O  O  -  O  -  O  O 
-		 O  O  O  O  O  O  X 
-		 - (X) -  O  -  O  - 
-		 O  O  O  -  O  O  O 
-		 O  -  O  O  -  O  O 
-
-		Error in move
-
-		So what's going on? Why isn't the game state keeping up with these positions if they're legal positions? Why aren't they being simulated?
-		
-		In at least one case, the node with no simulations has noise = NaN which probably makes the search probability zero for that node, which probably means it isn't expanded either...
-		ayep, I'm finding more examples of this now that I'm looking around... so this may have more to do with the noise generation function at node expansion. I'll have a look there.
-		
-		okay, i figured it out...
-			
-			It has to do with how I generate noise to promote exploration.
-			
-			1) When I expand nodes, I generate noise from a gaussian distribution and then normalize it to promote exploration of new moves.
-			2) When there's a small number of moves available, there's a non-negligible chance that the function I *was* using (Math.max(0, random.nextGaussian());) produces all zeros
-			3) This means when I add this noise to the individual nodes using (leaf.children.add(new Node(leaf, move, -leaf.player, noise.pop()/sumOfNoise));), I can get divide by zero errors
-			4) But Java helpfully produces Doubles with a value of "NaN"
-			5) This NaN value drives the search likelihood to zero when I'm exploring my tree, so the node has zero simulations
-			6) The zero simulation thing was giving me a problem, too, but when the opponent played at unvisited nodes, it was causing other errors that I'll still have to resolve...
-			7) In the end, it appeared as though these were errors relating to sensible move generation because the error was most likely to occur at the end-game which correlates with remaining moves just involving lots of captures and stuff, so it appeared as though I was having more trouble with my simulation apparatus...
-			Solution:
-				Add a tiny term to avoid dividing by zero. Add it in the denominator to be extra clear what I'm doing.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	Bug:
-		The noise I add to my policy is sometimes NaN, so that's not right...
-
-
-
-
-	5) try and figure out how to install dl4j and load/do inference with a keras model trained in python
-
-
-
 

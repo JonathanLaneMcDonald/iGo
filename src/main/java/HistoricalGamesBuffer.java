@@ -37,6 +37,15 @@ public class HistoricalGamesBuffer {
 		}
 	}
 
+	public void recordGames(MatchRecord[] matchRecords) {
+		for(var record : matchRecords)
+			attemptToBufferGame(record.movesToSGF());
+	}
+
+	public void recordGame(MatchRecord matchRecord) {
+		attemptToBufferGame(matchRecord.movesToSGF());
+	}
+
 	private void attemptToBufferGame(String gameString) {
 		var optOfGame = HistoricalGame.parseFromString(gameString);
 

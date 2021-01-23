@@ -20,13 +20,20 @@ public class Main
 	{
 		//loadModelTest();
 
+		int parallelGames = 8;
+		int asyncWorkers = 8;
+
 		var schedule = TrainingSchedule.defaultSchedule();
 		var hgb = new HistoricalGamesBuffer(schedule,"self-play data");
 		var policy = new TrainablePolicy("path to a trainable policy");
-		var selfPlayTrainer = new SelfPlayTrainer(schedule, hgb, policy);
 
-		int parallelGames = 8;
-		int asyncWorkers = 8;
+		var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
+		var blackSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
+		var whiteSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
+		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig);
+
+		var selfPlayTrainer = new SelfPlayTrainer(schedule, hgb, policy, orchestrator);
+
 		selfPlayTrainer.commenceTraining(parallelGames, asyncWorkers);
 
 		/*var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
