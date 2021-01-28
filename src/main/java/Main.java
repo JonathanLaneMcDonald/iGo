@@ -27,7 +27,7 @@ public class Main
 		var hgb = new HistoricalGamesBuffer(schedule,"self-play data");
 		var policy = new TrainablePolicy("path to a trainable policy");
 
-		var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{7,8,9}, true), 6.5);
+		var mmConfig = new MultiMatchConfiguration(new BoardSizeDistribution(new int[]{5,6,7,8,9}, true), 6.5);
 		var blackSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
 		var whiteSupplier = new StrategySupplier(PlayerConfiguration.PresetVanillaMCTS(), StrategySupplier.StrategyType.VanillaMCTS);
 		var orchestrator = new MultiMatchOrchestrator(blackSupplier, whiteSupplier, mmConfig);

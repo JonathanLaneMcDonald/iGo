@@ -1,14 +1,19 @@
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class HistoricalGamesBuffer {
 
+	private Random random;
 	private final TrainingSchedule schedule;
 	private BufferedWriter bufferedWriter;
 	private ArrayList<HistoricalGame> historicalGames;
 
 	public HistoricalGamesBuffer(TrainingSchedule schedule, String pathToHistoricalGames) {
+
+		random = new Random();
+
 		this.schedule = schedule;
 
 		bufferedWriter = null;
@@ -20,6 +25,10 @@ public class HistoricalGamesBuffer {
 		System.out.println(historicalGames.size()+" games loaded into replay buffer");
 
 		trimHistoricalGamesBuffer();
+	}
+
+	public HistoricalGame getUniformRandomGame() {
+		return historicalGames.get(random.nextInt(historicalGames.size()));
 	}
 
 	public void registerNewGame(MatchRecord matchRecord) {
